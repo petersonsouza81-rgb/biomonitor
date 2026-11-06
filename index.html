@@ -1,0 +1,3476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BioMonitor | Monitoramento de Sedes</title>
+  
+  <!-- Anti-Cache para Celular e Navegadores -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <meta name="theme-color" content="#1b4332">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BioMonitor">
+  
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json?v=biomonitor">
+  <link rel="apple-touch-icon" href="logos/apple-touch-icon.png?v=biomonitor">
+  <link rel="icon" type="image/png" sizes="192x192" href="logos/icon-192.png?v=biomonitor">
+  <link rel="icon" type="image/png" sizes="512x512" href="logos/icon-512.png?v=biomonitor">
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=biomonitor">
+  
+  <!-- Leaflet CSS & FontAwesome -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0f172a;
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Topbar */
+    header {
+      background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+      color: white;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.25);
+      overflow: hidden;
+      background: #0f172a;
+      flex-shrink: 0;
+    }
+
+    .brand-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .brand-title h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .brand-title p {
+      font-size: 11px;
+      color: #d8f3dc;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-stats {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+
+    .badge-stats .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-stats .dot-green {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+    }
+
+    .badge-stats .dot-yellow {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #eab308;
+      box-shadow: 0 0 6px rgba(234, 179, 8, 0.7);
+    }
+
+    .badge-stats .dot-red {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+    }
+
+    .btn-top {
+      background: rgba(255, 255, 255, 0.16);
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      color: #ffffff;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-top:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-refresh-app {
+      background: rgba(255, 255, 255, 0.18);
+      border: 1.5px solid rgba(255, 255, 255, 0.45);
+      color: #ffffff;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-refresh-app:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: #ffffff;
+    }
+
+    .btn-refresh-app:active {
+      transform: scale(0.95);
+    }
+
+    .btn-text-short {
+      display: none;
+    }
+
+    .brand-title-short {
+      display: none;
+    }
+
+    /* Eliminar quadrado preto/focus ring ao tocar em talhões, polígonos ou no mapa */
+    .leaflet-container,
+    .leaflet-container *,
+    .leaflet-pane,
+    .leaflet-pane *,
+    svg,
+    svg *,
+    path,
+    path:focus,
+    path:focus-visible,
+    path:active,
+    .leaflet-interactive,
+    .leaflet-interactive:focus,
+    .leaflet-interactive:focus-visible,
+    .leaflet-interactive:active {
+      outline: none !important;
+      outline-width: 0 !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-focus-ring-color: transparent !important;
+      -webkit-touch-callout: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
+    /* Responsividade refinada para Mobile */
+    @media (max-width: 680px) {
+      header {
+        padding: 5px 8px;
+        gap: 6px;
+      }
+      .brand {
+        gap: 6px;
+      }
+      .brand-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+        border-radius: 7px;
+        flex-shrink: 0;
+      }
+      .brand-title-full {
+        display: none;
+      }
+      .brand-title-short {
+        display: inline;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+      }
+      .brand-title p {
+        display: none;
+      }
+      .top-actions {
+        gap: 4px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+      }
+      .badge-stats {
+        padding: 3px 6px;
+        font-size: 10.5px;
+        gap: 4px;
+      }
+      .badge-stats .stat-item {
+        gap: 2px;
+      }
+      .btn-top,
+      .btn-install-app,
+      .btn-refresh-app {
+        padding: 5px 7px;
+        font-size: 11px;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .btn-text-full { display: none; }
+      .btn-text-short { display: inline; }
+
+      .map-legend {
+        bottom: 18px;
+        left: 10px;
+        max-width: 220px;
+        font-size: 10px;
+      }
+      .map-legend .legend-header {
+        padding: 5px 9px;
+        font-size: 10.5px;
+      }
+      .map-legend .legend-body {
+        padding: 4px 9px 8px 9px;
+        gap: 4px;
+      }
+    }
+
+    @media (max-width: 440px) {
+      header {
+        padding: 4px 6px;
+      }
+      .brand-icon {
+        width: 26px;
+        height: 26px;
+      }
+      .brand-title-short {
+        font-size: 12px;
+      }
+      .badge-stats {
+        padding: 2px 4px;
+        font-size: 9.5px;
+        gap: 3px;
+      }
+      .badge-stats .dot-green,
+      .badge-stats .dot-yellow,
+      .badge-stats .dot-red {
+        width: 6.5px;
+        height: 6.5px;
+      }
+      .btn-top,
+      .btn-install-app,
+      .btn-refresh-app {
+        padding: 4px 6px;
+        font-size: 10px;
+        gap: 3px;
+      }
+    }
+
+    @media (max-width: 375px) {
+      .btn-refresh-app .btn-text-short {
+        display: none;
+      }
+      .btn-refresh-app {
+        padding: 5px 7px;
+      }
+    }
+
+    /* Redimensionamento Dinamico dos Pontos conforme o Zoom */
+    .custom-sede-icon {
+      transition: width 0.2s ease, height 0.2s ease, margin 0.2s ease !important;
+    }
+
+    .sede-pin {
+      transition: width 0.2s ease, height 0.2s ease, font-size 0.2s ease !important;
+    }
+
+    /* 1. Zoom Afastado (zoom <= 12): METADE DO TAMANHO (18px) */
+    #map.zoom-afastado .custom-sede-icon {
+      width: 18px !important;
+      height: 18px !important;
+      margin-left: -9px !important;
+      margin-top: -9px !important;
+    }
+
+    #map.zoom-afastado .sede-pin {
+      width: 18px !important;
+      height: 18px !important;
+      border: 1.5px solid #ffffff !important;
+      font-size: 8px !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    #map.zoom-afastado .sede-pin .badge-mini {
+      display: none !important;
+    }
+
+    #map.zoom-afastado .sede-pin .sede-tag {
+      display: none !important;
+    }
+
+    /* 2. Zoom Medio (zoom 13 a 14): Tamanho Intermediario (26px) */
+    #map.zoom-medio .custom-sede-icon {
+      width: 26px !important;
+      height: 26px !important;
+      margin-left: -13px !important;
+      margin-top: -13px !important;
+    }
+
+    #map.zoom-medio .sede-pin {
+      width: 26px !important;
+      height: 26px !important;
+      border: 1.5px solid #ffffff !important;
+      font-size: 11px !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    #map.zoom-medio .sede-pin .badge-mini {
+      width: 13px !important;
+      height: 13px !important;
+      font-size: 6px !important;
+      top: -3px !important;
+      right: -3px !important;
+    }
+
+    #map.zoom-medio .sede-pin .sede-tag {
+      font-size: 8.5px !important;
+      bottom: -15px !important;
+      padding: 0 4px !important;
+    }
+
+    /* 3. Zoom Proximo (zoom >= 15): Tamanho Completo Original (36px) */
+    #map.zoom-proximo .custom-sede-icon {
+      width: 36px !important;
+      height: 36px !important;
+      margin-left: -18px !important;
+      margin-top: -18px !important;
+    }
+
+    #map.zoom-proximo .sede-pin {
+      width: 36px !important;
+      height: 36px !important;
+      font-size: 16px !important;
+    }
+
+    /* Tooltip elegante ao passar o dedo / cursor sobre a sede */
+    .sede-tooltip-custom {
+      background: rgba(15, 23, 42, 0.95) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: #f8fafc !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+      padding: 4px 8px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    }
+    .sede-tooltip-custom:before {
+      border-top-color: rgba(15, 23, 42, 0.95) !important;
+    }
+
+    
+
+    /* Mapa */
+    #map {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background: #0b1320;
+    }
+
+    /* Marcador Personalizado Sede */
+    .sede-pin {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+      border: 2px solid #ffffff;
+      color: white;
+      font-size: 16px;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .sede-pin.status-verde {
+      background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+      box-shadow: 0 3px 12px rgba(34, 197, 94, 0.55);
+    }
+
+    .sede-pin.status-amarelo {
+      background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+      box-shadow: 0 3px 12px rgba(234, 179, 8, 0.55);
+    }
+
+    .sede-pin.status-vermelho {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      box-shadow: 0 3px 12px rgba(239, 68, 68, 0.55);
+    }
+
+    .sede-pin .badge-mini {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      color: white;
+      border: 1.5px solid white;
+      border-radius: 50%;
+      width: 17px;
+      height: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: bold;
+    }
+
+    .sede-pin .badge-mini.status-verde {
+      background: #15803d;
+    }
+
+    .sede-pin .badge-mini.status-amarelo {
+      background: #a16207;
+    }
+
+    .sede-pin .badge-mini.status-vermelho {
+      background: #991b1b;
+    }
+
+    /* Legenda Flutuante no Mapa */
+    .map-legend {
+      position: absolute;
+      bottom: 24px;
+      left: 14px;
+      z-index: 800;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+      color: #f8fafc;
+      font-size: 11px;
+      overflow: hidden;
+      max-width: 270px;
+      transition: all 0.25s ease;
+    }
+
+    .map-legend .legend-header {
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      user-select: none;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .map-legend .legend-body {
+      padding: 6px 12px 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .map-legend .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-color {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+      flex-shrink: 0;
+    }
+
+    .legend-color.verde {
+      background: #22c55e;
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+    }
+
+    .legend-color.amarelo {
+      background: #eab308;
+      box-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+    }
+
+    .legend-color.vermelho {
+      background: #ef4444;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+    }
+
+    /* Badges de Status no Card de Detalhes */
+    .status-indicator-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-indicator-badge.status-verde {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid #22c55e;
+    }
+
+    .status-indicator-badge.status-amarelo {
+      background: rgba(234, 179, 8, 0.2);
+      color: #facc15;
+      border: 1px solid #eab308;
+    }
+
+    .status-indicator-badge.status-vermelho {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid #ef4444;
+    }
+
+    .sede-pin .sede-tag {
+      position: absolute;
+      bottom: -18px;
+      background: rgba(15, 23, 42, 0.9);
+      color: #f8fafc;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Card de Detalhes da Sede (Inferior) */
+    #detail-card {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(160%);
+      width: calc(100% - 32px);
+      max-width: 480px;
+      background: #1e293b;
+      color: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    #detail-card.open {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .detail-title h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #52b788;
+    }
+
+    .detail-title p {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .detail-close {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+
+    .detail-close:hover {
+      color: #ffffff;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+
+    .detail-item {
+      background: #0f172a;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+
+    .detail-item span {
+      display: block;
+      color: #64748b;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .detail-item strong {
+      color: #f1f5f9;
+      font-size: 12px;
+    }
+
+    .detail-status-box {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #f1f5f9;
+    }
+
+    .detail-status-box.status-verde {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.4);
+      color: #bbf7d0;
+    }
+
+    .detail-status-box.status-amarelo {
+      background: rgba(234, 179, 8, 0.12);
+      border-color: rgba(234, 179, 8, 0.4);
+      color: #fef08a;
+    }
+
+    .detail-status-box.status-vermelho {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fecaca;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-action-visitar {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-action-visitar:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
+    .btn-action-rota {
+      background: #334155;
+      color: #f8fafc;
+      flex: 0 0 46px;
+    }
+
+    /* ========================================================================
+       MODAL CENTRALIZADO DO FORMULÁRIO DE VISTORIA (FRONT & CENTER)
+       ======================================================================== */
+    #modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1500;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    #modal-backdrop.open {
+      display: block;
+      opacity: 1;
+    }
+
+    #form-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      width: calc(100% - 24px);
+      max-width: 520px;
+      max-height: 92vh;
+      background: #1e293b;
+      color: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      z-index: 1600;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+      opacity: 0;
+    }
+
+    #form-modal.open {
+      display: flex;
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-header h3 {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+    }
+
+    .form-summary-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-summary-box .sede-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #52b788;
+    }
+
+    .form-summary-box .sede-sub {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .form-summary-box .sede-badge {
+      background: #2d6a4f;
+      color: #ffffff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .form-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #52b788;
+      font-weight: 700;
+      margin: 12px 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 5px;
+    }
+
+    .form-group label .req {
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    .form-control {
+      width: 100%;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      color: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: #52b788;
+    }
+
+    .form-control[readonly] {
+      background: #182234;
+      color: #4ade80;
+      border-color: #273549;
+      font-weight: 700;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Grupos de Botões Selecionáveis */
+    .button-group-select {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .button-group-select input[type="radio"] {
+      display: none;
+    }
+
+    .btn-select-opt {
+      flex: 1;
+      padding: 11px 8px;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      color: #94a3b8;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .btn-select-opt:hover {
+      background: #1e293b;
+    }
+
+    .button-group-select input[type="radio"]:checked + .btn-select-opt {
+      border-color: #52b788;
+      background: rgba(82, 183, 136, 0.15);
+      color: #4ade80;
+      font-weight: 700;
+      box-shadow: 0 0 0 1px #52b788;
+    }
+
+    /* Destaque para Pressão */
+    .button-group-select input[value="Baixa"]:checked + .btn-select-opt {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.18);
+      color: #4ade80;
+      box-shadow: 0 0 0 1px #22c55e;
+    }
+
+    .button-group-select input[value="Média"]:checked + .btn-select-opt {
+      border-color: #eab308;
+      background: rgba(234, 179, 8, 0.18);
+      color: #facc15;
+      box-shadow: 0 0 0 1px #eab308;
+    }
+
+    .button-group-select input[value="Alta"]:checked + .btn-select-opt {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
+      box-shadow: 0 0 0 1px #ef4444;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+      margin-top: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #0f172a;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      z-index: 2500;
+      transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 4px solid #10b981;
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #toast.error {
+      border-left-color: #ef4444;
+    }
+
+    
+
+    /* GPS Status Bar */
+    #gps-bar {
+      background: #0f172a;
+      color: #94a3b8;
+      font-size: 11px;
+      padding: 6px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 998;
+      flex-shrink: 0;
+    }
+    .gps-active {
+      color: #4ade80 !important;
+      font-weight: 600;
+    }
+
+    /* Floating GPS Button */
+    .fab-gps {
+      position: absolute;
+      bottom: 84px;
+      right: 14px;
+      z-index: 1000;
+      background: #ffffff;
+      color: #1e293b;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .fab-gps:hover {
+      background: #f8fafc;
+      transform: scale(1.06);
+    }
+    .fab-gps:active {
+      transform: scale(0.95);
+    }
+
+    /* Marcador do Usuário no Mapa (Pulso Azul) */
+    .user-marker {
+      width: 16px;
+      height: 16px;
+      background: #2563eb;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
+      position: relative;
+    }
+    .user-marker::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      width: 36px;
+      height: 36px;
+      background: rgba(37, 99, 235, 0.35);
+      border-radius: 50%;
+      animation: userPulse 1.8s infinite;
+    }
+    @keyframes userPulse {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    /* Box de Coordenadas GPS no Formulário */
+    .gps-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .gps-box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+    .gps-box-coords {
+      font-family: monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+    .btn-refresh-gps {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #e2e8f0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.2s;
+    }
+    .btn-refresh-gps:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* Foto com coordenada por item do formulário */
+    .foto-campo {
+      margin-top: 8px;
+    }
+    .btn-foto {
+      width: 100%;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px dashed rgba(96, 165, 250, 0.6);
+      color: #bfdbfe;
+      padding: 9px 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-foto:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+    .foto-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.45);
+      border-radius: 8px;
+      padding: 6px;
+    }
+    .foto-preview img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+      cursor: zoom-in;
+    }
+    .foto-preview-info {
+      flex: 1;
+      min-width: 0;
+      font-size: 11px;
+      color: #cbd5e1;
+      font-family: monospace;
+      line-height: 1.4;
+    }
+    .foto-preview-info strong {
+      color: #22c55e;
+      font-family: inherit;
+    }
+    .foto-preview-acoes {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    @media (max-width: 680px) {
+      .fab-gps {
+        bottom: 78px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+      }
+    }
+
+
+    /* Backdrop do Filtro */
+    #filter-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 1999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    #filter-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Filter Drawer (Painel Deslizante Lateral) */
+    #filter-drawer {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 100%;
+      max-width: 460px;
+      height: 100%;
+      background: #ffffff;
+      z-index: 2000;
+      box-shadow: -6px 0 24px rgba(0, 0, 0, 0.35);
+      transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    #filter-drawer.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      background: linear-gradient(135deg, #1b4332, #2d6a4f);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .drawer-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+    }
+    .drawer-close {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      line-height: 1;
+      transition: background 0.2s;
+    }
+    .drawer-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .filter-search-container {
+      padding: 14px 18px 10px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-box i.search-icon {
+      position: absolute;
+      left: 14px;
+      color: #64748b;
+      font-size: 14px;
+      pointer-events: none;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 11px 36px 11px 38px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 13.5px;
+      color: #0f172a;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-box input:focus {
+      border-color: #2d6a4f;
+      box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
+    }
+    .btn-clear-search {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+    .btn-clear-search:hover {
+      color: #334155;
+    }
+
+    .filter-count-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .filter-results-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #f1f5f9;
+    }
+
+    .ponto-card {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .ponto-card:hover {
+      border-color: #52b788;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-1px);
+    }
+    .ponto-card-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .ponto-card-num {
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 13px;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+    .ponto-card-num.status-verde {
+      background: linear-gradient(135deg, #15803d, #22c55e);
+    }
+    .ponto-card-num.status-amarelo {
+      background: linear-gradient(135deg, #ca8a04, #eab308);
+    }
+    .ponto-card-num.status-vermelho {
+      background: linear-gradient(135deg, #b91c1c, #ef4444);
+    }
+
+    .ponto-card-details {
+      min-width: 0;
+      flex: 1;
+    }
+    .ponto-card-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ponto-card-sub {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ponto-status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      margin-top: 4px;
+    }
+    .ponto-status-tag.status-verde {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .ponto-status-tag.status-amarelo {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+    .ponto-status-tag.status-vermelho {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* Floating Action Buttons */
+    .fab-group {
+      position: absolute;
+      bottom: 22px;
+      right: 14px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .fab-btn {
+      background: linear-gradient(135deg, #2d6a4f, #1b4332);
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: 30px;
+      font-size: 13.5px;
+      font-weight: 700;
+      border: 2px solid #52b788;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .fab-btn:hover {
+      background: linear-gradient(135deg, #367d5e, #22533e);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+    }
+    .fab-btn:active {
+      transform: scale(0.96);
+    }
+
+    @media (max-width: 680px) {
+      .fab-group {
+        bottom: 16px;
+        right: 10px;
+      }
+      .fab-btn {
+        padding: 10px 14px;
+        font-size: 12.5px;
+        gap: 6px;
+      }
+      .fab-gps {
+        bottom: 70px !important;
+        right: 10px !important;
+      }
+    }
+
+
+    /* Botão Baixar / Instalar App */
+    .btn-install-app {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #ffffff;
+      border: 1.5px solid #fbbf24;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.45);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-install-app:hover {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.6);
+    }
+    .btn-install-app:active {
+      transform: scale(0.95);
+    }
+
+    /* TELA DE CARREGAMENTO INICIAL */
+    #app-loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease-out, visibility 0.4s;
+    }
+
+    .loading-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 30px 24px;
+      max-width: 320px;
+      width: 90%;
+    }
+
+    .loading-logo-box {
+      width: 86px;
+      height: 86px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(34, 197, 94, 0.25);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      margin-bottom: 18px;
+      background: #0f172a;
+      animation: pulseLogo 2s ease-in-out infinite;
+    }
+
+    .loading-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    @keyframes pulseLogo {
+      0%, 100% { transform: scale(1); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.2); }
+      50% { transform: scale(1.05); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), 0 0 30px rgba(34, 197, 94, 0.45); }
+    }
+
+    .loading-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: 0.3px;
+      margin-bottom: 14px;
+    }
+
+    .loading-spinner-wrapper {
+      margin-bottom: 12px;
+    }
+
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3.5px solid rgba(34, 197, 94, 0.2);
+      border-top-color: #22c55e;
+      border-radius: 50%;
+      animation: spinLoader 0.75s linear infinite;
+    }
+
+    @keyframes spinLoader {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-status {
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- TELA DE CARREGAMENTO INICIAL COM LOGO E ANIMAÇÃO -->
+  <div id="app-loading-screen">
+    <div class="loading-card">
+      <div class="loading-logo-box">
+        <img src="logos/BioMonitor_512.jpg" alt="BioMonitor Logo" onerror="this.onerror=null; this.src='logos/icon-192.png';">
+      </div>
+      <div class="loading-title">BioMonitor | Monitoramento de Sedes</div>
+      <div class="loading-spinner-wrapper">
+        <div class="loading-spinner"></div>
+      </div>
+      <div class="loading-status" id="loading-status-text">
+        <i class="fa-solid fa-arrows-rotate fa-spin" style="color:#22c55e;"></i>
+        <span>Carregando dados e mapa...</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-container">
+    <!-- Topbar -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="logos/BioMonitor_512.jpg" alt="BioMonitor Logo" onerror="this.onerror=null; this.src='logos/icon-192.png';">
+        </div>
+        <div class="brand-title">
+          <h1><span class="brand-title-full">BioMonitor | Monitoramento de Sedes</span><span class="brand-title-short">BioMonitor</span></h1>
+          <p>Gestão e Rotina de Vistorias no Campo</p>
+          <p id="dados-atualizacao" style="font-size:10px; opacity:.75; margin-top:2px;"></p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="badge-stats" title="Status das Vistorias">
+          <div class="stat-item" title="Até 7 dias (Em dia)" data-lim-title="Até {V} dias (Em dia)"><span class="dot-green"></span> <span id="count-verde">0</span></div>
+          <div class="stat-item" title="8 a 15 dias (Atenção)" data-lim-title="{A1} a {A} dias (Atenção)"><span class="dot-yellow"></span> <span id="count-amarelo">0</span></div>
+          <div class="stat-item" title="A partir de 16 dias / Sem visita" data-lim-title="A partir de {R} dias / Sem visita"><span class="dot-red"></span> <span id="count-vermelho">0</span></div>
+        </div>
+
+        <!-- Vistorias guardadas no celular aguardando envio -->
+        <button id="btn-fila-envio" class="btn-top" onclick="processarFilaEnvio(true)" title="Vistorias guardadas no celular aguardando envio. Toque para tentar enviar agora." style="display:none; background:#b45309; color:#fff; border:1px solid #f59e0b; align-items:center; gap:6px;">
+          <i class="fa-solid fa-cloud-arrow-up"></i> <span id="fila-envio-qtd">0</span><span class="btn-text-full">&nbsp;pendente(s)</span>
+        </button>
+
+        <!-- Botão Abrir Guia da Equipe de Campo -->
+        <a href="guia_campo.html?v=biomonitor_v23" class="btn-top" title="Abrir Guia da Equipe de Campo" style="background:#1e293b; color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px; border:1px solid #334155;">
+          <i class="fa-solid fa-person-digging" style="color:#38bdf8;"></i> <span class="btn-text-full">Guia do Campo</span><span class="btn-text-short">Guia</span>
+        </a>
+
+        <button id="btn-install-app" class="btn-install-app" onclick="acionarInstalacaoApp()" title="Instalar e baixar aplicativo no celular ou computador">
+          <i class="fa-solid fa-download"></i> <span class="btn-text-full">Baixar App</span><span class="btn-text-short">Baixar</span>
+        </button>
+
+        <button class="btn-top btn-refresh-app" id="btn-refresh-app" onclick="forcarAtualizacaoApp()" title="Atualizar aplicativo e limpar todo o cache">
+          <i class="fa-solid fa-arrows-rotate" id="icon-refresh-app"></i> <span class="btn-text-full">Limpar Cache e Atualizar</span><span class="btn-text-short">Atualizar</span>
+        </button>
+      </div>
+    </header>
+
+    
+
+    <!-- Barra de Status do GPS em Tempo Real -->
+    <div id="gps-bar">
+      <span id="gps-text"><i class="fa-solid fa-location-crosshairs"></i> Aguardando sinal de GPS...</span>
+      <span id="nearest-point"></span>
+    </div>
+
+
+
+    <!-- Mapa Leaflet -->
+    <div id="map"></div>
+
+    <!-- Botão Flutuante: Filtrar Sede -->
+    <div class="fab-group">
+      <button class="fab-btn" onclick="abrirFiltroSedes()" title="Localizar e Filtrar Sede">
+        <i class="fa-solid fa-magnifying-glass"></i> Filtrar Sede
+      </button>
+    </div>
+
+    <!-- Backdrop do Filtro -->
+    <div id="filter-backdrop" onclick="fecharFiltro()"></div>
+
+    <!-- Painel Lateral Deslizante de Filtro e Busca -->
+    <div id="filter-drawer">
+      <div class="drawer-header">
+        <h2><i class="fa-solid fa-magnifying-glass"></i> Localizar Sede</h2>
+        <button class="drawer-close" onclick="fecharFiltro()">&times;</button>
+      </div>
+      <div class="filter-search-container">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="filtro-busca-input" placeholder="Buscar por número, nome, fazenda ou FA..." oninput="filtrarListaSedes()" autocomplete="off" />
+          <button type="button" class="btn-clear-search" id="btn-limpar-busca" onclick="limparBuscaSedes()" style="display:none;">&times;</button>
+        </div>
+        <div class="filter-count-bar">
+          <span id="filtro-count-label">Carregando sedes...</span>
+        </div>
+      </div>
+      <div class="filter-results-list" id="filtro-lista-sedes">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+    </div>
+
+    <!-- Botão Flutuante: Centralizar no GPS -->
+    <button class="fab-gps" title="Centralizar na Minha Posição" onclick="centralizarGPS()">
+      <i class="fa-solid fa-crosshairs"></i>
+    </button>
+
+    <!-- Legenda Temática das Vistorias -->
+    <div class="map-legend" id="map-legend">
+      <div class="legend-header" onclick="toggleLegenda()">
+        <span><i class="fa-solid fa-layer-group"></i> Rotina de Visitas</span>
+        <i class="fa-solid fa-chevron-down" id="legend-chevron"></i>
+      </div>
+      <div class="legend-body" id="legend-body">
+        <div class="legend-row">
+          <span class="legend-color verde"></span>
+          <span><strong data-lim-text="Até {V} dias">Até 7 dias</strong> (Verde - Em dia)</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-color amarelo"></span>
+          <span><strong data-lim-text="{A1} a {A} dias">8 a 15 dias</strong> (Amarelo - Atenção)</span>
+        </div>
+        <div class="legend-row">
+          <span class="legend-color vermelho"></span>
+          <span><strong data-lim-text="≥ {R} dias">≥ 16 dias</strong> (Vermelho - Atrasado)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card de Detalhes da Sede (Fica no rodapé ao clicar na sede) -->
+    <div id="detail-card">
+      <div class="detail-header">
+        <div class="detail-title">
+          <h2 id="card-nome-sede">Sede</h2>
+          <p id="card-fa-fazenda">Fazenda</p>
+        </div>
+        <button class="detail-close" onclick="fecharCardDetalhes()">&times;</button>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Número da Sede</span>
+          <strong id="card-num-sede">-</strong>
+        </div>
+        <div class="detail-item">
+          <span>Código FA</span>
+          <strong id="card-fa">-</strong>
+        </div>
+        <div class="detail-item">
+          <span>Proprietário</span>
+          <strong id="card-proprietario">-</strong>
+        </div>
+        <div class="detail-item">
+          <span>Região</span>
+          <strong id="card-regiao">-</strong>
+        </div>
+      </div>
+      <div id="card-status-box" class="detail-status-box pendente">
+        <i class="fa-solid fa-clock"></i> <span id="card-status-texto">Pendente de Vistoria</span>
+      </div>
+      <div class="detail-actions">
+        <button class="btn-action btn-action-visitar" onclick="abrirFormularioVisita()">
+          <i class="fa-solid fa-clipboard-check"></i> <span id="btn-visitar-texto">Preencher Vistoria</span>
+        </button>
+        <button class="btn-action btn-action-rota" onclick="abrirRotaGoogleMaps()" title="Traçar rota no GPS">
+          <i class="fa-solid fa-diamond-turn-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Fundo Escurecido do Modal (Backdrop) -->
+    <div id="modal-backdrop" onclick="fecharFormulario()"></div>
+
+    <!-- MODAL CENTRALIZADO DO FORMULÁRIO DE VISTORIA -->
+    <div id="form-modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-clipboard-list"></i> Formulário de Vistoria da Sede</h3>
+        <button class="detail-close" onclick="fecharFormulario()">&times;</button>
+      </div>
+      <form class="modal-body" onsubmit="salvarVisita(event)">
+        <input type="hidden" id="form-num-sede">
+        <input type="hidden" id="form-lat">
+        <input type="hidden" id="form-lon">
+
+        <!-- Identificação da Sede -->
+        <div class="form-summary-box">
+          <div>
+            <div class="sede-title" id="form-resumo-sede">Sede 00 - Nome</div>
+            <div class="sede-sub" id="form-resumo-fazenda">FA 000000 - Fazenda</div>
+          </div>
+          <div class="sede-badge" id="form-resumo-prop">Proprietário</div>
+        </div>
+
+        <!-- Box de Coordenadas de Onde o Ponto foi Lançado (GPS) -->
+        <div class="gps-box">
+          <div class="gps-box-header">
+            <span><i class="fa-solid fa-location-crosshairs"></i> Coordenadas do Lançamento (GPS)</span>
+            <button type="button" class="btn-refresh-gps" onclick="capturarGpsAoVivo(true)">
+              <i class="fa-solid fa-arrows-rotate"></i> Atualizar GPS
+            </button>
+          </div>
+          <div class="gps-box-coords" id="gps-box-texto">
+            <i class="fa-solid fa-spinner fa-spin"></i> Obtendo coordenadas GPS...
+          </div>
+        </div>
+
+        <div class="form-section-title">Dados da Avaliação</div>
+
+        <!-- 1. Data da Vistoria (Automático) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data da Vistoria <span class="req">*</span> (Automático)</label>
+            <input type="text" id="form-data-vistoria" class="form-control" readonly required>
+          </div>
+          <div class="form-group">
+            <label>Hora da Vistoria</label>
+            <input type="text" id="form-hora-vistoria" class="form-control" readonly>
+          </div>
+        </div>
+
+        <!-- 2. Matrícula do Avaliador (até 6 Dígitos - Obrigatório) -->
+        <div class="form-group">
+          <label>Matrícula do Avaliador (até 6 dígitos) <span class="req">*</span></label>
+          <input type="text" id="form-matricula" class="form-control" placeholder="Digite a matrícula (ex: 123456)" maxlength="6" inputmode="numeric" required>
+        </div>
+
+        <!-- 3. Pressão: Baixa, Média e Alta (Obrigatório) -->
+        <div class="form-group">
+          <label>Pressão <span class="req">*</span></label>
+          <div class="button-group-select">
+            <label style="flex:1">
+              <input type="radio" name="campo-pressao" value="Baixa" required>
+              <div class="btn-select-opt"><i class="fa-solid fa-circle-check"></i> Baixa</div>
+            </label>
+            <label style="flex:1">
+              <input type="radio" name="campo-pressao" value="Média">
+              <div class="btn-select-opt"><i class="fa-solid fa-triangle-exclamation"></i> Média</div>
+            </label>
+            <label style="flex:1">
+              <input type="radio" name="campo-pressao" value="Alta">
+              <div class="btn-select-opt"><i class="fa-solid fa-circle-exclamation"></i> Alta</div>
+            </label>
+          </div>
+          <div class="foto-campo" data-foto="pressao"></div>
+        </div>
+
+        <!-- 4. N° de bandeiras: quantidade (Digitável e obrigatório) -->
+        <div class="form-group">
+          <label>N° de Bandeiras (Quantidade) <span class="req">*</span></label>
+          <input type="number" id="form-bandeiras" class="form-control" placeholder="Informe a quantidade de bandeiras" min="0" step="1" required>
+          <div class="foto-campo" data-foto="bandeiras"></div>
+        </div>
+
+        <!-- 5. Larva e Pupa: Ausência e Presença (Obrigatório) -->
+        <div class="form-group">
+          <label>Larva e Pupa <span class="req">*</span></label>
+          <div class="button-group-select">
+            <label style="flex:1">
+              <input type="radio" name="campo-larva-pupa" value="Ausência" required>
+              <div class="btn-select-opt"><i class="fa-solid fa-shield"></i> Ausência</div>
+            </label>
+            <label style="flex:1">
+              <input type="radio" name="campo-larva-pupa" value="Presença">
+              <div class="btn-select-opt"><i class="fa-solid fa-bug"></i> Presença</div>
+            </label>
+          </div>
+          <div class="foto-campo" data-foto="larva_pupa"></div>
+        </div>
+
+        <!-- 6. Inseticida: Aplicado ou Não Aplicado (Obrigatório) -->
+        <div class="form-group">
+          <label>Inseticida <span class="req">*</span></label>
+          <div class="button-group-select">
+            <label style="flex:1">
+              <input type="radio" name="campo-inseticida" value="Aplicado" required>
+              <div class="btn-select-opt"><i class="fa-solid fa-spray-can"></i> Aplicado</div>
+            </label>
+            <label style="flex:1">
+              <input type="radio" name="campo-inseticida" value="Não Aplicado">
+              <div class="btn-select-opt"><i class="fa-solid fa-ban"></i> Não Aplicado</div>
+            </label>
+          </div>
+          <div class="foto-campo" data-foto="inseticida"></div>
+        </div>
+
+        <!-- 7. Possíveis Causadores: Torta, Vinhaça, Outro -->
+        <div class="form-group">
+          <label>Possíveis Causadores</label>
+          <div class="button-group-select">
+            <label style="flex:1">
+              <input type="radio" name="campo-causador" value="Torta" onchange="alternarCampoCausadorOutro()">
+              <div class="btn-select-opt"><i class="fa-solid fa-leaf"></i> Torta</div>
+            </label>
+            <label style="flex:1">
+              <input type="radio" name="campo-causador" value="Vinhaça" onchange="alternarCampoCausadorOutro()">
+              <div class="btn-select-opt"><i class="fa-solid fa-droplet"></i> Vinhaça</div>
+            </label>
+            <label style="flex:1">
+              <input type="radio" name="campo-causador" value="Outro" onchange="alternarCampoCausadorOutro()">
+              <div class="btn-select-opt"><i class="fa-solid fa-pen-to-square"></i> Outro</div>
+            </label>
+          </div>
+          <!-- Campo dinâmico exibido apenas quando 'Outro' for selecionado -->
+          <div id="box-causador-outro" style="display: none; margin-top: 8px;">
+            <label style="font-size: 11.5px; color: #cbd5e1; margin-bottom: 4px; display: block;">Qual o causador? <span class="req">*</span></label>
+            <input type="text" id="form-causador-outro" class="form-control" placeholder="Especifique o causador (ex: Esterco, Palha úmida, etc.)">
+          </div>
+          <div class="foto-campo" data-foto="causador"></div>
+        </div>
+
+        <div class="form-section-title">Informações Complementares</div>
+
+        <div class="form-group">
+          <label>Observações da Vistoria (Opcional)</label>
+          <textarea id="form-obs" class="form-control" rows="2" placeholder="Informações adicionais, alinhamentos ou demandas..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-check"></i> Salvar e Confirmar Vistoria
+        </button>
+      </form>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"><i class="fa-solid fa-circle-check"></i> <span>Aviso</span></div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Dados Geográficos -->
+  <script src="dados_mapa.js"></script>
+  <script>
+    // Limites de status (dias) vindos de scripts/biomonitor_config.json via dados_mapa.js
+    const LIM_VERDE = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.verde_max_dias) || 7;
+    const LIM_AMARELO = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.amarelo_max_dias) || 15;
+    function aplicarTextosLimites() {
+      const fmt = s => s.replace(/\{V\}/g, LIM_VERDE).replace(/\{A1\}/g, LIM_VERDE + 1)
+                        .replace(/\{A\}/g, LIM_AMARELO).replace(/\{R\}/g, LIM_AMARELO + 1);
+      document.querySelectorAll("[data-lim-text]").forEach(el => { el.textContent = fmt(el.getAttribute("data-lim-text")); });
+      document.querySelectorAll("[data-lim-title]").forEach(el => { el.title = fmt(el.getAttribute("data-lim-title")); });
+    }
+    document.addEventListener("DOMContentLoaded", aplicarTextosLimites);
+  </script>
+
+  <script>
+        const ASSET_UID = "aK9E8d8UZ5XkKCXqwWnmpG";
+    const KOBO_SUBMISSION_URL = "https://kc.kobotoolbox.org/comercial_ps/submission";
+
+    let userLat = null, userLon = null, userAcc = null;
+    let userMarker = null, userAccCircle = null;
+
+    function escapeXml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
+    let map;
+    let markersLayer = L.layerGroup();
+    let sedesData = [];
+    let sedeSelecionada = null;
+    let historicoVisitas = [];
+
+    // Formata data brasileira dd/mm/yyyy
+    function getDataFormatadaBR(d = new Date()) {
+      const dia = String(d.getDate()).padStart(2, '0');
+      const mes = String(d.getMonth() + 1).padStart(2, '0');
+      const ano = d.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    // Formata hora brasileira hh:mm
+    function getHoraFormatadaBR(d = new Date()) {
+      return d.toTimeString().slice(0, 5);
+    }
+
+    // Inicialização
+    document.addEventListener("DOMContentLoaded", () => {
+      carregarHistorico();
+      initMap();
+      carregarCamadas();
+      atualizarContadores();
+      sincronizarVistoriasRemotas();
+      iniciarGpsTempoReal();
+      iniciarFilaEnvio();
+      montarCamposFoto();
+      const formVistoria = document.getElementById("form-modal");
+      formVistoria.addEventListener("change", atualizarCamposFoto);
+      formVistoria.addEventListener("input", atualizarCamposFoto);
+      mostrarDataAtualizacao();
+
+      // Preencher Data da Vistoria automática (ex: 27/10/2026)
+      atualizarCamposAutomaticos();
+
+      // No celular, iniciar a legenda recolhida para liberar espaço de mapa
+      if (window.innerWidth <= 600) {
+        const legendBody = document.getElementById("legend-body");
+        const legendChevron = document.getElementById("legend-chevron");
+        if (legendBody) legendBody.style.display = "none";
+        if (legendChevron) legendChevron.className = "fa-solid fa-chevron-up";
+      }
+
+      // Lembrar matrícula do avaliador
+      const mat = localStorage.getItem("biomonitor_matricula");
+      if (mat) document.getElementById("form-matricula").value = mat;
+
+      // Registrar Service Worker
+      // Exibir o botão se não estiver rodando no modo standalone (aplicativo já instalado)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      const btnInstall = document.getElementById("btn-install-app");
+      if (btnInstall && !isStandalone) {
+        btnInstall.style.display = "inline-flex";
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+
+      // Concluir tela de carregamento inicial
+      setTimeout(ocultarLoadingInicial, 700);
+    });
+
+    window.addEventListener("load", () => {
+      setTimeout(ocultarLoadingInicial, 500);
+    });
+
+    function ocultarLoadingInicial() {
+      const ls = document.getElementById("app-loading-screen");
+      if (ls && ls.style.display !== "none") {
+        ls.style.opacity = "0";
+        ls.style.pointerEvents = "none";
+        setTimeout(() => {
+          if (ls.parentNode) ls.remove();
+        }, 450);
+      }
+    }
+    // Fallback de segurança absoluto (máx 2.5s)
+    setTimeout(ocultarLoadingInicial, 2500);
+
+    function atualizarCamposAutomaticos() {
+      const agora = new Date();
+      document.getElementById("form-data-vistoria").value = getDataFormatadaBR(agora);
+      document.getElementById("form-hora-vistoria").value = getHoraFormatadaBR(agora);
+    }
+
+
+    // =========================================================================
+    // RASTREAMENTO E CAPTURA DE GPS EM TEMPO REAL (COORDENADAS DO LANÇAMENTO)
+    // =========================================================================
+    function iniciarGpsTempoReal() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition(
+          (pos) => {
+            userLat = pos.coords.latitude;
+            userLon = pos.coords.longitude;
+            userAcc = Math.round(pos.coords.accuracy);
+
+            const gpsEl = document.getElementById("gps-text");
+            if (gpsEl) {
+              gpsEl.innerHTML = `<i class="fa-solid fa-circle-check gps-active"></i> GPS Ativo (Precisão: ${userAcc}m)`;
+              gpsEl.className = "gps-active";
+            }
+
+            const latlng = [userLat, userLon];
+            if (!userMarker && map) {
+              const icon = L.divIcon({
+                className: 'user-marker',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+              });
+              userMarker = L.marker(latlng, { icon: icon, zIndexOffset: 1000 }).addTo(map);
+              userAccCircle = L.circle(latlng, {
+                radius: userAcc,
+                color: '#3b82f6',
+                weight: 1,
+                fillColor: '#60a5fa',
+                fillOpacity: 0.15
+              }).addTo(map);
+            } else if (userMarker) {
+              userMarker.setLatLng(latlng);
+              userAccCircle.setLatLng(latlng);
+              userAccCircle.setRadius(userAcc);
+            }
+
+            calcularSedeMaisProxima(userLat, userLon);
+          },
+          (err) => {
+            const gpsEl = document.getElementById("gps-text");
+            if (gpsEl) {
+              gpsEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> GPS desligado ou sem permissão`;
+              gpsEl.className = "";
+            }
+          },
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+      }
+    }
+
+    function centralizarGPS() {
+      if (userLat && userLon && map) {
+        map.setView([userLat, userLon], 16);
+      } else {
+        showToast("Aguardando sinal de GPS...", "info");
+        capturarGpsAoVivo(true);
+      }
+    }
+
+    function atualizarCoordenadasGpsForm(lat, lon, acc, rotuloExtra) {
+      const elLat = document.getElementById("form-lat");
+      const elLon = document.getElementById("form-lon");
+      const elTexto = document.getElementById("gps-box-texto");
+
+      if (lat && lon) {
+        elLat.value = lat;
+        elLon.value = lon;
+        const accText = acc ? ` (±${acc}m)` : '';
+        const extra = rotuloExtra ? ` [${rotuloExtra}]` : '';
+        if (elTexto) {
+          elTexto.innerHTML = `<span style="color:#22c55e;"><i class="fa-solid fa-circle-check"></i> Lat: ${parseFloat(lat).toFixed(6)}, Lon: ${parseFloat(lon).toFixed(6)}${accText}${extra}</span>`;
+        }
+      } else {
+        elLat.value = "";
+        elLon.value = "";
+        if (elTexto) {
+          elTexto.innerHTML = `<span style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Aguardando sinal de GPS...</span>`;
+        }
+      }
+    }
+
+    function capturarGpsAoVivo(mostrarAviso = false) {
+      const elTexto = document.getElementById("gps-box-texto");
+      if (elTexto) {
+        elTexto.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Obtendo coordenadas GPS de alta precisão...`;
+      }
+
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            userLat = pos.coords.latitude;
+            userLon = pos.coords.longitude;
+            userAcc = Math.round(pos.coords.accuracy);
+            atualizarCoordenadasGpsForm(userLat, userLon, userAcc, "GPS do Lançamento");
+            if (mostrarAviso) {
+              showToast(`🎯 GPS atualizado! Precisão: ${userAcc}m`, "success");
+            }
+          },
+          (err) => {
+            if (userLat && userLon) {
+              atualizarCoordenadasGpsForm(userLat, userLon, userAcc, "Último GPS Conhecido");
+            } else if (sedeSelecionada && sedeSelecionada.coords) {
+              atualizarCoordenadasGpsForm(sedeSelecionada.coords[0], sedeSelecionada.coords[1], null, "Coordenada da Sede");
+            } else if (elTexto) {
+              elTexto.innerHTML = `<span style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> GPS indisponível ou sem permissão</span>`;
+            }
+            if (mostrarAviso) {
+              showToast("⚠️ Verifique se o GPS e a localização estão ativados.", "error");
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      } else {
+        if (elTexto) {
+          elTexto.innerHTML = `<span style="color:#ef4444;">Dispositivo sem suporte a GPS</span>`;
+        }
+      }
+    }
+
+    function calcularSedeMaisProxima(lat, lon) {
+      if (!geojsonSedes || !map) return;
+      let minDesc = Infinity;
+      let closest = null;
+      geojsonSedes.eachLayer(layer => {
+        if (layer.feature && layer.feature.geometry) {
+          const coords = layer.feature.geometry.coordinates;
+          const d = map.distance([lat, lon], [coords[1], coords[0]]);
+          if (d < minDesc) {
+            minDesc = d;
+            closest = layer.feature.properties;
+          }
+        }
+      });
+      const elNearest = document.getElementById("nearest-point");
+      if (elNearest && closest && minDesc < 10000) {
+        elNearest.innerText = `Próxima: Sede ${closest.num_sede || ''} (${Math.round(minDesc)}m)`;
+      }
+    }
+
+    function carregarHistorico() {
+      let koboList = [];
+      if (typeof DADOS_VISTORIAS_KOBO !== "undefined" && Array.isArray(DADOS_VISTORIAS_KOBO)) {
+        koboList = DADOS_VISTORIAS_KOBO;
+      }
+
+      let localVisitas = [];
+      try {
+        localVisitas = JSON.parse(localStorage.getItem("visitas_historico") || "[]").filter(visitaNoPeriodo);
+      } catch (e) {
+        localVisitas = [];
+      }
+
+      const mapV = new Map();
+      koboList.forEach(v => {
+        const k = String(v.num_sede || v.pontoId || "");
+        if (k) {
+          if (!mapV.has(k)) mapV.set(k, []);
+          mapV.get(k).push(v);
+        }
+      });
+
+      localVisitas.forEach(v => {
+        const k = String(v.num_sede || v.pontoId || "");
+        if (k) {
+          if (!mapV.has(k)) mapV.set(k, []);
+          const exists = mapV.get(k).some(ex =>
+            (ex.data_vistoria === v.data_vistoria && ex.hora_vistoria === v.hora_vistoria) ||
+            (ex.kobo_id && v.kobo_id && ex.kobo_id === v.kobo_id) ||
+            (ex.instance_id && v.instance_id && ex.instance_id === v.instance_id)
+          );
+          if (!exists) {
+            mapV.get(k).push(v);
+          }
+        }
+      });
+
+      historicoVisitas = [];
+      mapV.forEach(arr => {
+        historicoVisitas.push(...arr);
+      });
+    }
+
+    function sincronizarVistoriasRemotas() {
+      fetch("./vistorias_kobo.json?_t=" + Date.now())
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error("vistorias_kobo.json indisponivel");
+        })
+        .then(remotas => {
+          if (Array.isArray(remotas) && remotas.length > 0) {
+            let adicionados = 0;
+            remotas.forEach(rv => {
+              const jaExiste = historicoVisitas.some(hv =>
+                (hv.instance_id && rv.instance_id && hv.instance_id === rv.instance_id) ||
+                String(hv.num_sede) === String(rv.num_sede) &&
+                (hv.data_vistoria || hv.data) === (rv.data_vistoria || rv.data) &&
+                (hv.hora_vistoria || hv.hora) === (rv.hora_vistoria || rv.hora)
+              );
+              if (!jaExiste) {
+                historicoVisitas.push(rv);
+                adicionados++;
+              }
+            });
+            if (adicionados > 0) {
+              console.log(`[KOBO SYNC] ${adicionados} novas vistorias sincronizadas.`);
+              renderizarSedes();
+              atualizarContadores();
+            }
+          }
+        })
+        .catch(err => {
+          console.log("[KOBO SYNC] Operando com base embutida local:", err.message);
+        });
+    }
+
+    function initMap() {
+      // Centro aproximado de Araçatuba / SP
+      map = L.map("map", {
+        center: [-21.25, -50.43],
+        zoom: 12,
+        zoomControl: false
+      });
+
+      L.control.zoom({ position: "topright" }).addTo(map);
+
+      // Listener de Zoom para ajustar o tamanho dos pontos dinamicamente
+      atualizarTamanhoPontosPorZoom();
+      map.on("zoom", atualizarTamanhoPontosPorZoom);
+      map.on("zoomend", atualizarTamanhoPontosPorZoom);
+
+      // Camadas Base
+      const googleHybrid = L.tileLayer("https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
+        maxZoom: 20,
+        subdomains: ["mt0", "mt1", "mt2", "mt3"]
+      });
+
+      const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19
+      });
+
+      googleHybrid.addTo(map);
+
+      const baseMaps = {
+        "Google Satélite (Híbrido)": googleHybrid,
+        "OpenStreetMap": osm
+      };
+
+      L.control.layers(baseMaps, null, { position: "topright" }).addTo(map);
+
+      markersLayer.addTo(map);
+
+      // Fechar card ao clicar no mapa e remover qualquer foco/contorno ativo
+      map.on("click", (e) => {
+        if (document.activeElement && typeof document.activeElement.blur === "function") {
+          document.activeElement.blur();
+        }
+        if (!e.originalEvent.target.closest("#detail-card") && 
+            !e.originalEvent.target.closest("#form-modal") && 
+            !e.originalEvent.target.closest(".sede-pin")) {
+          fecharCardDetalhes();
+        }
+      });
+
+      // Prevenir caixa preta de acessibilidade no Android ao tocar em elementos SVG
+      document.addEventListener("touchend", (e) => {
+        if (e.target && e.target.tagName && ["path", "svg", "g"].includes(e.target.tagName.toLowerCase())) {
+          if (typeof e.target.blur === "function") e.target.blur();
+        }
+      }, { passive: true });
+    }
+
+    function atualizarTamanhoPontosPorZoom() {
+      if (!map) return;
+      const z = map.getZoom();
+      const mapEl = document.getElementById("map");
+      if (!mapEl) return;
+
+      mapEl.classList.remove("zoom-afastado", "zoom-medio", "zoom-proximo");
+      if (z <= 12) {
+        // Zoom afastado: METADE DO TAMANHO (18px)
+        mapEl.classList.add("zoom-afastado");
+      } else if (z <= 14) {
+        // Zoom intermediario (26px)
+        mapEl.classList.add("zoom-medio");
+      } else {
+        // Zoom proximo (36px com tags e badges completas)
+        mapEl.classList.add("zoom-proximo");
+      }
+    }
+
+    function carregarCamadas() {
+      // Pontos das Sedes
+      if (typeof DADOS_SEDES !== "undefined" && DADOS_SEDES.features) {
+        sedesData = DADOS_SEDES.features;
+        renderizarSedes();
+      }
+    }
+
+    function toggleLegenda() {
+      const body = document.getElementById("legend-body");
+      const icon = document.getElementById("legend-chevron");
+      if (body.style.display === "none") {
+        body.style.display = "flex";
+        icon.className = "fa-solid fa-chevron-down";
+      } else {
+        body.style.display = "none";
+        icon.className = "fa-solid fa-chevron-up";
+      }
+    }
+
+    function parseDataBR(dataStr) {
+      if (!dataStr || typeof dataStr !== "string") return null;
+      if (dataStr.includes("/")) {
+        const parts = dataStr.trim().split("/");
+        if (parts.length === 3) {
+          const dia = parseInt(parts[0], 10);
+          const mes = parseInt(parts[1], 10) - 1;
+          const ano = parseInt(parts[2], 10);
+          if (!isNaN(dia) && !isNaN(mes) && !isNaN(ano)) {
+            return new Date(ano, mes, dia);
+          }
+        }
+      } else if (dataStr.includes("-")) {
+        const parts = dataStr.trim().split("-");
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          } else {
+            return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+          }
+        }
+      }
+      return null;
+    }
+
+    // Calcula status temático conforme regra de vistoria:
+    // Limites definidos em scripts/biomonitor_config.json (padrao: verde <= 7, amarelo 8 a 15, vermelho >= 16)
+    function calcularStatusTematico(vistoria) {
+      if (!vistoria) {
+        return {
+          status: "vermelho",
+          classe: "status-vermelho",
+          cor: "#ef4444",
+          label: "Sem Vistoria",
+          sublabel: "Nunca vistoriada",
+          dias: null,
+          icone: "fa-triangle-exclamation"
+        };
+      }
+
+      let dt = parseDataBR(vistoria.data_vistoria || vistoria.data);
+      if (!dt && vistoria.salvoEm) {
+        const d = new Date(vistoria.salvoEm);
+        if (!isNaN(d.getTime())) {
+          dt = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+      }
+
+      if (!dt) {
+        return {
+          status: "vermelho",
+          classe: "status-vermelho",
+          cor: "#ef4444",
+          label: "Sem data válida",
+          sublabel: "Data pendente",
+          dias: null,
+          icone: "fa-triangle-exclamation"
+        };
+      }
+
+      const hoje = new Date();
+      const hojeZero = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      const dtZero = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      const diffMs = hojeZero.getTime() - dtZero.getTime();
+      const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const dias = Math.max(0, diffDias);
+
+      if (dias <= LIM_VERDE) {
+        return {
+          status: "verde",
+          classe: "status-verde",
+          cor: "#22c55e",
+          label: dias === 0 ? "Vistoriada Hoje" : (dias === 1 ? "Há 1 dia" : `Há ${dias} dias`),
+          sublabel: `≤ ${LIM_VERDE} dias (Em dia)`,
+          dias: dias,
+          icone: "fa-check"
+        };
+      } else if (dias <= LIM_AMARELO) {
+        return {
+          status: "amarelo",
+          classe: "status-amarelo",
+          cor: "#eab308",
+          label: `Há ${dias} dias`,
+          sublabel: `${LIM_VERDE + 1} a ${LIM_AMARELO} dias (Atenção)`,
+          dias: dias,
+          icone: "fa-clock"
+        };
+      } else {
+        return {
+          status: "vermelho",
+          classe: "status-vermelho",
+          cor: "#ef4444",
+          label: `Há ${dias} dias`,
+          sublabel: `≥ ${LIM_AMARELO + 1} dias (Atrasada)`,
+          dias: dias,
+          icone: "fa-triangle-exclamation"
+        };
+      }
+    }
+
+    function getStatusSede(numSede) {
+      const visitas = historicoVisitas.filter(x => String(x.num_sede) === String(numSede));
+      if (visitas.length > 0) {
+        if (visitas.length === 1) return visitas[0];
+        // Ordenar por data decrescente
+        visitas.sort((a, b) => {
+          const da = parseDataBR(a.data_vistoria || a.data) || (a.salvoEm ? new Date(a.salvoEm) : new Date(0));
+          const db = parseDataBR(b.data_vistoria || b.data) || (b.salvoEm ? new Date(b.salvoEm) : new Date(0));
+          return db.getTime() - da.getTime();
+        });
+        return visitas[0];
+      }
+
+      // Fallback para atributos embutidos no Shapefile (DADOS_SEDES)
+      const feat = sedesData.find(f => String(f.properties && f.properties.num_sede) === String(numSede));
+      if (feat && feat.properties && feat.properties.visitado && (feat.properties.data_vistoria || feat.properties.data)) {
+        return feat.properties;
+      }
+      return null;
+    }
+
+    function renderizarSedes(filtro = "") {
+      markersLayer.clearLayers();
+      filtro = filtro.toLowerCase().trim();
+
+      sedesData.forEach(feature => {
+        const p = feature.properties;
+        const [lon, lat] = feature.geometry.coordinates;
+
+        // Filtro
+        if (filtro) {
+          const texto = `${p.num_sede} ${p.nome_sede} ${p.fa} ${p.fazenda} ${p.proprietario}`.toLowerCase();
+          if (!texto.includes(filtro)) return;
+        }
+
+        const vistoria = getStatusSede(p.num_sede);
+        const st = calcularStatusTematico(vistoria);
+
+        const iconHtml = `
+          <div class="sede-pin ${st.classe}" title="Sede ${p.num_sede} - ${st.label} (${st.sublabel})">
+            <i class="fa-solid fa-house-chimney"></i>
+            <div class="sede-tag">${p.num_sede}</div>
+          </div>
+        `;
+
+        const customIcon = L.divIcon({
+          html: iconHtml,
+          className: "custom-sede-icon",
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
+        });
+
+        const marker = L.marker([lat, lon], { icon: customIcon });
+        marker.bindTooltip(`<b>Sede ${p.num_sede}</b> - ${p.nome_sede || ''}`, {
+          direction: "top",
+          offset: [0, -10],
+          className: "sede-tooltip-custom"
+        });
+        marker.on("click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          mostrarDetalhesSede(p, [lat, lon], vistoria);
+        });
+
+        marker.addTo(markersLayer);
+      });
+    }
+
+    function mostrarDetalhesSede(p, coords, vistoria) {
+      sedeSelecionada = { properties: p, coords: coords };
+
+      document.getElementById("card-nome-sede").innerText = p.nome_sede || `Sede ${p.num_sede}`;
+      document.getElementById("card-fa-fazenda").innerText = p.fa_completo || "Sem Fazenda Vinculada";
+      document.getElementById("card-num-sede").innerText = p.num_sede || "-";
+      document.getElementById("card-fa").innerText = p.fa || "-";
+      document.getElementById("card-proprietario").innerText = p.proprietario || "Não informado";
+      document.getElementById("card-regiao").innerText = p.regiao || "-";
+
+      const statusBox = document.getElementById("card-status-box");
+      const statusTexto = document.getElementById("card-status-texto");
+      const btnTexto = document.getElementById("btn-visitar-texto");
+
+      const v = vistoria || getStatusSede(p.num_sede);
+      const st = calcularStatusTematico(v);
+      const totalVisitasSede = historicoVisitas.filter(x => String(x.num_sede) === String(p.num_sede)).length;
+
+      if (v) {
+        statusBox.className = `detail-status-box ${st.classe}`;
+        statusTexto.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:5px;">
+            <span class="status-indicator-badge ${st.classe}"><i class="fa-solid ${st.icone}"></i> ${st.label} (${st.sublabel})</span>
+            <span style="font-size:11px; opacity:0.85; font-weight:600;"><i class="fa-solid fa-clock-rotate-left"></i> ${totalVisitasSede} no histórico</span>
+          </div>
+          <div>Última Vistoria em <strong>${v.data_vistoria || v.data || ''}</strong> ${v.hora_vistoria ? 'às ' + v.hora_vistoria : ''} (Avaliador: <strong>${v.matricula || '-'}</strong>)</div>
+          <div style="margin-top:3px; font-size:11px; opacity:0.9;">
+            Pressão: <strong>${v.pressao || '-'}</strong> | Bandeiras: <strong>${v.bandeiras !== undefined ? v.bandeiras : '-'}</strong> | Larva/Pupa: <strong>${v.larva_pupa || '-'}</strong> | Inseticida: <strong>${v.inseticida || '-'}</strong>
+            ${v.possiveis_causadores ? ` | Causadores: <strong>${v.possiveis_causadores}</strong>` : ''}
+          </div>
+        `;
+        btnTexto.innerText = "Lançar Nova Vistoria";
+      } else {
+        statusBox.className = "detail-status-box status-vermelho";
+        statusTexto.innerHTML = `
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <span class="status-indicator-badge status-vermelho"><i class="fa-solid fa-triangle-exclamation"></i> Sem Vistoria (≥ ${LIM_AMARELO + 1} dias)</span>
+          </div>
+          <div style="font-size:11px; opacity:0.9;">Nenhuma vistoria registrada para esta sede até o momento.</div>
+        `;
+        btnTexto.innerText = "Preencher Vistoria";
+      }
+
+      document.getElementById("detail-card").classList.add("open");
+      map.panTo(coords);
+    }
+
+    function fecharCardDetalhes() {
+      document.getElementById("detail-card").classList.remove("open");
+    }
+
+    function abrirFormularioVisita() {
+      if (!sedeSelecionada) return;
+      const p = sedeSelecionada.properties;
+
+      atualizarCamposAutomaticos();
+
+      // Esconder o card inferior para focar 100% no modal centralizado
+      fecharCardDetalhes();
+
+      document.getElementById("form-num-sede").value = p.num_sede;
+      // Captura a coordenada REAL de onde o ponto está sendo lançado
+      if (userLat && userLon) {
+        atualizarCoordenadasGpsForm(userLat, userLon, userAcc, "GPS do Lançamento");
+      } else {
+        capturarGpsAoVivo(false);
+        if (sedeSelecionada && sedeSelecionada.coords) {
+          atualizarCoordenadasGpsForm(sedeSelecionada.coords[0], sedeSelecionada.coords[1], null, "Coordenada da Sede (Aguardando GPS)");
+        }
+      }
+
+      document.getElementById("form-resumo-sede").innerText = `Sede ${p.num_sede} - ${p.nome_sede || ''}`;
+      document.getElementById("form-resumo-fazenda").innerText = `${p.fa_completo || p.fazenda || 'Sem Fazenda'}`;
+      document.getElementById("form-resumo-prop").innerText = p.proprietario || "Proprietário";
+
+      // Titulo do modal indicando nova vistoria
+      const modalTitulo = document.querySelector("#form-modal .modal-header h3");
+      if (modalTitulo) {
+        modalTitulo.innerHTML = `<i class="fa-solid fa-clipboard-check"></i> Nova Vistoria - Sede ${p.num_sede}`;
+      }
+
+      // SEMPRE abrir o formulário em branco para cadastrar uma NOVA vistoria (mantendo histórico intacto)
+      document.querySelectorAll('input[name="campo-pressao"]').forEach(r => r.checked = false);
+      document.querySelectorAll('input[name="campo-larva-pupa"]').forEach(r => r.checked = false);
+      document.querySelectorAll('input[name="campo-inseticida"]').forEach(r => r.checked = false);
+      document.querySelectorAll('input[name="campo-causador"]').forEach(r => r.checked = false);
+      document.getElementById("box-causador-outro").style.display = "none";
+      document.getElementById("form-causador-outro").value = "";
+      document.getElementById("form-bandeiras").value = "";
+      document.getElementById("form-obs").value = "";
+      limparFotosVistoria();
+
+      // Abrir Modal Centralizado com Fundo Escurecido
+      document.getElementById("modal-backdrop").classList.add("open");
+      document.getElementById("form-modal").classList.add("open");
+      
+      // Focar no campo de matrícula se estiver vazio
+      setTimeout(() => {
+        const mat = document.getElementById("form-matricula");
+        if (!mat.value) mat.focus();
+      }, 300);
+    }
+
+    function alternarCampoCausadorOutro() {
+      const outroRadio = document.querySelector('input[name="campo-causador"][value="Outro"]:checked');
+      const boxOutro = document.getElementById("box-causador-outro");
+      const inputOutro = document.getElementById("form-causador-outro");
+      if (outroRadio) {
+        boxOutro.style.display = "block";
+        setTimeout(() => inputOutro.focus(), 150);
+      } else {
+        boxOutro.style.display = "none";
+        inputOutro.value = "";
+      }
+    }
+
+    function fecharFormulario() {
+      document.getElementById("modal-backdrop").classList.remove("open");
+      document.getElementById("form-modal").classList.remove("open");
+    }
+
+    function abrirRotaGoogleMaps() {
+      if (!sedeSelecionada) return;
+      const [lat, lon] = sedeSelecionada.coords;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+      window.open(url, "_blank");
+    }
+
+    async function salvarVisita(e) {
+      e.preventDefault();
+      // Evita vistoria duplicada por toque duplo enquanto as fotos sao gravadas
+      if (salvandoVistoria) return;
+
+      const numSede = document.getElementById("form-num-sede").value;
+      const nomeSede = sedeSelecionada ? (sedeSelecionada.properties.nome_sede || `Sede ${numSede}`) : `Sede ${numSede}`;
+      const fazenda = sedeSelecionada ? (sedeSelecionada.properties.fa_completo || sedeSelecionada.properties.fazenda || "") : "";
+      const proprietario = sedeSelecionada ? (sedeSelecionada.properties.proprietario || "") : "";
+      
+      const dataV = document.getElementById("form-data-vistoria").value;
+      const horaV = document.getElementById("form-hora-vistoria").value;
+      const matricula = document.getElementById("form-matricula").value.trim();
+
+      // Campos específicos solicitados pelo usuário
+      const pressaoRadio = document.querySelector('input[name="campo-pressao"]:checked');
+      const pressao = pressaoRadio ? pressaoRadio.value : "";
+
+      const bandeiras = document.getElementById("form-bandeiras").value.trim();
+
+      const larvaPupaRadio = document.querySelector('input[name="campo-larva-pupa"]:checked');
+      const larvaPupa = larvaPupaRadio ? larvaPupaRadio.value : "";
+
+      const inseticidaRadio = document.querySelector('input[name="campo-inseticida"]:checked');
+      const inseticida = inseticidaRadio ? inseticidaRadio.value : "";
+
+      const obs = document.getElementById("form-obs").value.trim();
+
+      // Coordenadas de onde foi lançado o ponto: Prioridade máxima para o GPS ao vivo do aparelho
+      let lat = (userLat !== null && userLat !== undefined) ? userLat : document.getElementById("form-lat").value;
+      let lon = (userLon !== null && userLon !== undefined) ? userLon : document.getElementById("form-lon").value;
+
+      // Fallback de segurança se o GPS estiver desligado ou for desktop
+      if (!lat || !lon) {
+        if (sedeSelecionada && sedeSelecionada.coords) {
+          lat = sedeSelecionada.coords[0];
+          lon = sedeSelecionada.coords[1];
+        }
+      }
+
+      // Validação da matrícula: aceita até 6 dígitos numéricos
+      if (!matricula || isNaN(matricula) || matricula.length < 1 || matricula.length > 6) {
+        showToast("A Matrícula do Avaliador deve conter até 6 dígitos numéricos!", "error");
+        document.getElementById("form-matricula").focus();
+        return;
+      }
+      if (!dataV) {
+        showToast("Data da Vistoria é obrigatória!", "error");
+        return;
+      }
+      if (!pressao) {
+        showToast("Selecione o nível de Pressão (Baixa, Média ou Alta)!", "error");
+        return;
+      }
+      if (bandeiras === "" || isNaN(bandeiras) || parseInt(bandeiras) < 0) {
+        showToast("Informe a quantidade de N° de bandeiras!", "error");
+        document.getElementById("form-bandeiras").focus();
+        return;
+      }
+      if (!larvaPupa) {
+        showToast("Selecione Larva e Pupa (Ausência ou Presença)!", "error");
+        return;
+      }
+      if (!inseticida) {
+        showToast("Selecione Inseticida (Aplicado ou Não Aplicado)!", "error");
+        return;
+      }
+
+      // Possíveis Causadores
+      const causadorRadio = document.querySelector('input[name="campo-causador"]:checked');
+      let causador = causadorRadio ? causadorRadio.value : "";
+      if (causador === "Outro") {
+        const especificado = document.getElementById("form-causador-outro").value.trim();
+        if (!especificado) {
+          showToast("Por favor, especifique o causador no campo 'Outro'!", "error");
+          document.getElementById("form-causador-outro").focus();
+          return;
+        }
+        causador = `Outro: ${especificado}`;
+      }
+
+      // Uma foto com coordenada para cada item com algo a registrar
+      const camposPreenchidos = Object.keys(FOTO_CAMPOS).filter(fotoExigida);
+      const semFoto = camposPreenchidos.find(c => !fotosVistoria[c]);
+      if (semFoto) {
+        showToast(`Tire a foto do item "${FOTO_CAMPOS[semFoto]}"!`, "error");
+        const el = document.querySelector(`.foto-campo[data-foto="${semFoto}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      const fotosSalvar = camposPreenchidos.map(c => ({ campo: c, ...fotosVistoria[c] }));
+      salvandoVistoria = true;
+
+      // Lembrar matrícula do avaliador
+      localStorage.setItem("biomonitor_matricula", matricula);
+
+      // Localização oficial da Sede
+      const sedeLat = (sedeSelecionada && sedeSelecionada.coords) ? sedeSelecionada.coords[0] : (sedeSelecionada && sedeSelecionada.properties ? sedeSelecionada.properties.lat : "");
+      const sedeLon = (sedeSelecionada && sedeSelecionada.coords) ? sedeSelecionada.coords[1] : (sedeSelecionada && sedeSelecionada.properties ? sedeSelecionada.properties.lon : "");
+      const locSede = (sedeLat && sedeLon) ? `${sedeLat}, ${sedeLon}` : "";
+      const linkMapsSede = (sedeLat && sedeLon) ? `https://www.google.com/maps?q=${sedeLat},${sedeLon}` : "";
+
+      const instanceId = 'uuid:' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + '-' + Math.random().toString(36).substring(2)));
+
+      const novaVistoria = {
+        num_sede: numSede,
+        nome_sede: nomeSede,
+        fa: sedeSelecionada ? (sedeSelecionada.properties.fa || "") : "",
+        fazenda: fazenda,
+        proprietario: proprietario,
+        regiao: sedeSelecionada ? (sedeSelecionada.properties.regiao || "") : "",
+        lat_sede: sedeLat,
+        lon_sede: sedeLon,
+        localizacao_sede: locSede,
+        link_google_maps_sede: linkMapsSede,
+        data_vistoria: dataV,
+        hora_vistoria: horaV,
+        matricula: matricula,
+        pressao: pressao,
+        bandeiras: parseInt(bandeiras),
+        larva_pupa: larvaPupa,
+        inseticida: inseticida,
+        possiveis_causadores: causador,
+        observacoes: obs,
+        lat: lat,
+        lon: lon,
+        latitude_gps_lancamento: lat,
+        longitude_gps_lancamento: lon,
+        gps_precisao: userAcc || null,
+        origem_coordenada: (userLat !== null && userLat !== undefined) ? "gps_lancamento" : "sede_referencia",
+        fotos: fotosSalvar.map(f => ({ campo: f.campo, nome: f.nome, lat: f.lat, lon: f.lon, data_hora: f.dataHora })),
+        salvoEm: new Date().toISOString(),
+        instance_id: instanceId
+      };
+
+      historicoVisitas.push(novaVistoria);
+      localStorage.setItem("visitas_historico", JSON.stringify(historicoVisitas));
+
+      // Enviar vistoria diretamente para o KoboToolbox na nuvem
+      try {
+        const uuid = instanceId;
+        const xml = `<?xml version="1.0"?>
+<data id="${ASSET_UID}" version="20261027">
+  <num_sede>${escapeXml(numSede)}</num_sede>
+  <nome_sede>${escapeXml(nomeSede)}</nome_sede>
+  <fa>${escapeXml(sedeSelecionada ? (sedeSelecionada.properties.fa || "") : "")}</fa>
+  <fazenda>${escapeXml(fazenda)}</fazenda>
+  <proprietario>${escapeXml(proprietario)}</proprietario>
+  <regiao>${escapeXml(sedeSelecionada ? (sedeSelecionada.properties.regiao || "") : "")}</regiao>
+  <data_vistoria>${dataV}</data_vistoria>
+  <hora_vistoria>${horaV}</hora_vistoria>
+  <matricula>${escapeXml(matricula)}</matricula>
+  <pressao>${pressao}</pressao>
+  <bandeiras>${parseInt(bandeiras)}</bandeiras>
+  <larva_pupa>${larvaPupa}</larva_pupa>
+  <inseticida>${inseticida}</inseticida>
+  <possiveis_causadores>${escapeXml(causador)}</possiveis_causadores>
+  <observacoes>${escapeXml(obs)}</observacoes>
+  <localizacao_gps>${lat} ${lon} 0 ${userAcc || 5}</localizacao_gps>
+  <latitude>${lat}</latitude>
+  <longitude>${lon}</longitude>
+  <lat_sede>${sedeLat}</lat_sede>
+  <lon_sede>${sedeLon}</lon_sede>
+  <localizacao_sede>${locSede}</localizacao_sede>
+  <link_google_maps_sede>${linkMapsSede}</link_google_maps_sede>
+${fotosSalvar.map(f => `  <foto_${f.campo}>${escapeXml(f.nome)}</foto_${f.campo}>`).join("\n")}
+  <meta>
+    <instanceID>${uuid}</instanceID>
+  </meta>
+</data>`;
+        // Fotos primeiro no banco local, depois a vistoria entra na fila do celular
+        const fotosNoBanco = await guardarFotosVistoria(uuid, fotosSalvar);
+        if (!fotosNoBanco) showToast("Atenção: envie a vistoria antes de fechar o app (fotos não ficam salvas neste navegador).", "info");
+        enfileirarEnvio(uuid, xml, numSede, fotosSalvar.map(f => f.nome));
+      } catch (koboErr) {
+        console.log("Kobo sync warning:", koboErr);
+        showToast("Erro ao preparar o envio da vistoria. Avise a coordenação.", "error");
+      }
+      salvandoVistoria = false;
+
+      if (navigator.onLine) {
+        showToast(`Vistoria da Sede ${numSede} salva. Enviando para a nuvem...`, "success");
+      } else {
+        showToast(`Sem sinal: vistoria da Sede ${numSede} guardada no celular. Será enviada automaticamente.`, "info");
+      }
+      processarFilaEnvio();
+      fecharFormulario();
+      limparFotosVistoria();
+      renderizarSedes();
+      atualizarContadores();
+    }
+
+    
+    // =========================================================================
+    // PAINEL DESLIZANTE DE FILTRO E LOCALIZAÇÃO DE SEDES
+    // =========================================================================
+    function abrirFiltroSedes() {
+      document.getElementById("filter-backdrop").classList.add("open");
+      document.getElementById("filter-drawer").classList.add("open");
+      filtrarListaSedes();
+      setTimeout(() => {
+        const inp = document.getElementById("filtro-busca-input");
+        if (inp) inp.focus();
+      }, 300);
+    }
+
+    function fecharFiltro() {
+      document.getElementById("filter-backdrop").classList.remove("open");
+      document.getElementById("filter-drawer").classList.remove("open");
+    }
+
+    function limparBuscaSedes() {
+      const inp = document.getElementById("filtro-busca-input");
+      if (inp) inp.value = "";
+      const btnClear = document.getElementById("btn-limpar-busca");
+      if (btnClear) btnClear.style.display = "none";
+      filtrarListaSedes();
+      if (inp) inp.focus();
+    }
+
+    function filtrarListaSedes() {
+      const inp = document.getElementById("filtro-busca-input");
+      const btnClear = document.getElementById("btn-limpar-busca");
+      const texto = inp ? inp.value.trim().toLowerCase() : "";
+
+      if (btnClear) {
+        btnClear.style.display = texto.length > 0 ? "block" : "none";
+      }
+
+      if (!sedesData || sedesData.length === 0) return;
+
+      let filtrados = sedesData;
+      if (texto) {
+        filtrados = sedesData.filter(feat => {
+          const p = feat.properties;
+          const full = `${p.num_sede} ${p.nome_sede || ''} ${p.fa || ''} ${p.fazenda || ''} ${p.fa_completo || ''} ${p.proprietario || ''}`.toLowerCase();
+          return full.includes(texto);
+        });
+      }
+
+      // Ordenar: primeiro pelo número da sede numérico
+      filtrados.sort((a, b) => {
+        const nA = parseInt(a.properties.num_sede) || 0;
+        const nB = parseInt(b.properties.num_sede) || 0;
+        return nA - nB;
+      });
+
+      renderizarListaFiltro(filtrados);
+    }
+
+    function renderizarListaFiltro(lista) {
+      const container = document.getElementById("filtro-lista-sedes");
+      const countLabel = document.getElementById("filtro-count-label");
+      if (!container) return;
+
+      if (countLabel) {
+        countLabel.innerText = `${lista.length} sede${lista.length === 1 ? '' : 's'} encontrada${lista.length === 1 ? '' : 's'}`;
+      }
+
+      if (lista.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 30px 20px; text-align: center; color: #64748b;">
+            <i class="fa-solid fa-magnifying-glass" style="font-size: 28px; color: #94a3b8; margin-bottom: 10px;"></i>
+            <div style="font-size: 14px; font-weight: 700; color: #334155;">Nenhuma sede encontrada</div>
+            <div style="font-size: 12px; margin-top: 4px;">Tente pesquisar por outro número, fazenda ou FA.</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = lista.map(feat => {
+        const p = feat.properties;
+        const v = getStatusSede(p.num_sede);
+        const st = calcularStatusTematico(v);
+        const nomeSede = p.nome_sede || `Sede ${p.num_sede}`;
+        const fazenda = p.fa_completo || p.fazenda || 'Sem Fazenda';
+        const prop = p.proprietario ? ` • ${p.proprietario}` : '';
+
+        return `
+          <div class="ponto-card" onclick="selecionarSedeDoFiltro('${p.num_sede}')">
+            <div class="ponto-card-left">
+              <div class="ponto-card-num ${st.classe}">
+                ${p.num_sede}
+              </div>
+              <div class="ponto-card-details">
+                <div class="ponto-card-name">Sede ${p.num_sede} - ${nomeSede}</div>
+                <div class="ponto-card-sub">${fazenda}${prop}</div>
+                <div class="ponto-status-tag ${st.classe}">
+                  <i class="fa-solid ${st.icone}"></i> ${st.label} (${st.sublabel})
+                </div>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color: #94a3b8; font-size: 13px; margin-right: 4px;"></i>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function selecionarSedeDoFiltro(numSede) {
+      fecharFiltro();
+      const feat = sedesData.find(x => String(x.properties.num_sede) === String(numSede));
+      if (feat && feat.geometry && feat.geometry.coordinates) {
+        const [lon, lat] = feat.geometry.coordinates;
+        map.setView([lat, lon], 16);
+        mostrarDetalhesSede(feat.properties, [lat, lon]);
+      }
+    }
+
+
+    // =========================================================================
+    // INSTALAÇÃO DO APLICATIVO COMO APP NATIVO (PWA)
+    // =========================================================================
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById("btn-install-app");
+      if (btn) btn.style.display = "inline-flex";
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      const btn = document.getElementById("btn-install-app");
+      if (btn) btn.style.display = "none";
+      showToast("Aplicativo BioMonitor instalado com sucesso!", "success");
+    });
+
+    async function acionarInstalacaoApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          const btn = document.getElementById("btn-install-app");
+          if (btn) btn.style.display = "none";
+        }
+        deferredPrompt = null;
+      } else {
+        mostrarDicaInstalacaoManual();
+      }
+    }
+
+    function mostrarDicaInstalacaoManual() {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        alert("📲 Como baixar/instalar no iPhone (Safari):\n\n1. Toque no botão de Compartilhar (quadrado com seta para cima no rodapé do Safari)\n2. Role para baixo e selecione 'Adicionar à Tela de Início'\n3. Toque em 'Adicionar' no topo direito.");
+      } else {
+        alert("📲 Como baixar/instalar o Aplicativo:\n\n• No Celular (Android/Chrome):\nToque no menu de 3 pontinhos (⋮) no canto superior direito do navegador e selecione 'Instalar aplicativo' ou 'Adicionar à tela inicial'.\n\n• No Computador (Chrome/Edge):\nClique no ícone de instalar [💻+] na barra de endereços.");
+      }
+    }
+
+    function atualizarContadores() {
+      let countVerde = 0;
+      let countAmarelo = 0;
+      let countVermelho = 0;
+
+      const sedesLista = sedesData.length ? sedesData : (typeof DADOS_SEDES !== "undefined" ? DADOS_SEDES.features : []);
+      sedesLista.forEach(feature => {
+        const p = feature.properties;
+        const v = getStatusSede(p.num_sede);
+        const st = calcularStatusTematico(v);
+        if (st.status === "verde") countVerde++;
+        else if (st.status === "amarelo") countAmarelo++;
+        else countVermelho++;
+      });
+
+      const elV = document.getElementById("count-verde");
+      const elA = document.getElementById("count-amarelo");
+      const elR = document.getElementById("count-vermelho");
+      if (elV) elV.innerText = `${countVerde}`;
+      if (elA) elA.innerText = `${countAmarelo}`;
+      if (elR) elR.innerText = `${countVermelho}`;
+    }
+
+    function exportarExcelNavegador() {
+      if (historicoVisitas.length === 0) {
+        showToast("Nenhuma vistoria registrada para exportar!", "error");
+        return;
+      }
+
+      let csv = "DATA_VISTORIA;HORA;NUM_SEDE;NOME_SEDE;FA;FAZENDA;PROPRIETARIO;REGIAO;LATITUDE_SEDE;LONGITUDE_SEDE;LOCALIZACAO_SEDE;LINK_GOOGLE_MAPS_SEDE;MATRICULA_AVALIADOR;PRESSAO;NUM_BANDEIRAS;LARVA_PUPA;INSETICIDA;POSSIVEIS_CAUSADORES;STATUS_TEMATICO;DIAS_DESDE_VISITA;OBSERVACOES;LATITUDE_GPS_LANCAMENTO;LONGITUDE_GPS_LANCAMENTO\n";
+      historicoVisitas.forEach(v => {
+        const st = calcularStatusTematico(v);
+        const diasStr = st.dias !== null ? st.dias : "";
+        let latSede = v.lat_sede || "";
+        let lonSede = v.lon_sede || "";
+        if (!latSede && typeof sedesData !== "undefined" && Array.isArray(sedesData)) {
+          const f = sedesData.find(x => String(x.properties.num_sede) === String(v.num_sede));
+          if (f && f.geometry && f.geometry.coordinates) {
+            lonSede = f.geometry.coordinates[0];
+            latSede = f.geometry.coordinates[1];
+          }
+        }
+        const locSede = (latSede && lonSede) ? `${latSede}, ${lonSede}` : "";
+        const linkMaps = (latSede && lonSede) ? `https://www.google.com/maps?q=${latSede},${lonSede}` : "";
+
+        csv += `"${v.data_vistoria || v.data || ''}";"${v.hora_vistoria || v.hora || ''}";"${v.num_sede || ''}";"${v.nome_sede || ''}";"${v.fa || ''}";"${v.fazenda || ''}";"${v.proprietario || ''}";"${v.regiao || ''}";"${latSede}";"${lonSede}";"${locSede}";"${linkMaps}";"${v.matricula || ''}";"${v.pressao || ''}";"${v.bandeiras !== undefined ? v.bandeiras : ''}";"${v.larva_pupa || ''}";"${v.inseticida || ''}";"${v.possiveis_causadores || ''}";"${st.label} (${st.sublabel})";"${diasStr}";"${(v.observacoes || '').replace(/"/g, '""')}";"${v.lat || v.latitude_gps_lancamento || ''}";"${v.lon || v.longitude_gps_lancamento || ''}"\n`;
+      });
+
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Vistorias_Sedes_${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Relatório de vistorias exportado com sucesso!", "success");
+    }
+
+    async function forcarAtualizacaoApp() {
+      const icon = document.getElementById("icon-refresh-app");
+      const btn = document.getElementById("btn-refresh-app");
+      if (icon) icon.classList.add("fa-spin");
+      if (btn) btn.disabled = true;
+
+      showToast("🔄 Limpando cache e atualizando o aplicativo...", "info");
+
+      // 1. Limpar todo o CacheStorage do navegador
+      if ('caches' in window) {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        } catch (e) {}
+      }
+
+      // 2. Desregistrar qualquer Service Worker para carregar nova versão
+      if ('serviceWorker' in navigator) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) {
+            await r.unregister();
+          }
+        } catch (e) {}
+      }
+
+      // 3. Recarregar sem cache com timestamp único
+      setTimeout(() => {
+        const url = new URL(window.location.origin + window.location.pathname);
+        url.searchParams.set('_v', Date.now());
+        window.location.replace(url.toString());
+      }, 500);
+    }
+
+    // =========================================================================
+    // FOTOS COM COORDENADA: uma foto por item preenchido, carimbada com GPS
+    // =========================================================================
+    const FOTO_CAMPOS = {
+      pressao: "Pressão",
+      bandeiras: "N° de Bandeiras",
+      larva_pupa: "Larva e Pupa",
+      inseticida: "Inseticida",
+      causador: "Possíveis Causadores"
+    };
+    const FOTO_LADO_MAX = 1600;
+    let fotosVistoria = {};
+    let salvandoVistoria = false;
+    // Usado so quando o IndexedDB nao esta disponivel (ex.: aba anonima)
+    const fotosEmMemoria = new Map();
+
+    function montarCamposFoto() {
+      document.querySelectorAll(".foto-campo[data-foto]").forEach(el => renderizarCampoFoto(el.dataset.foto));
+      atualizarCamposFoto();
+    }
+
+    // Sem bandeira, sem larva/pupa, sem inseticida ou sem causador nao ha o que fotografar
+    function fotoExigida(campo) {
+      const valor = valorAtualCampo(campo);
+      if (campo === "bandeiras") return parseInt(valor) > 0;
+      if (campo === "larva_pupa") return valor === "Presença";
+      if (campo === "inseticida") return valor === "Aplicado";
+      return valor !== "";
+    }
+
+    function atualizarCamposFoto() {
+      document.querySelectorAll(".foto-campo[data-foto]").forEach(el => {
+        el.style.display = fotoExigida(el.dataset.foto) ? "" : "none";
+      });
+    }
+
+    function renderizarCampoFoto(campo) {
+      const el = document.querySelector(`.foto-campo[data-foto="${campo}"]`);
+      if (!el) return;
+      const foto = fotosVistoria[campo];
+      if (!foto) {
+        el.innerHTML = `
+          <input type="file" accept="image/*" capture="environment" style="display:none" onchange="processarFotoCampo('${campo}', this)">
+          <button type="button" class="btn-foto" onclick="this.previousElementSibling.click()">
+            <i class="fa-solid fa-camera"></i> Tirar foto - ${FOTO_CAMPOS[campo]}
+          </button>`;
+        return;
+      }
+      el.innerHTML = `
+        <div class="foto-preview">
+          <img src="${foto.url}" alt="Foto ${FOTO_CAMPOS[campo]}" onclick="window.open('${foto.url}', '_blank')">
+          <div class="foto-preview-info">
+            <strong><i class="fa-solid fa-circle-check"></i> Foto registrada</strong><br>
+            ${foto.lat !== null ? `${foto.lat.toFixed(6)}, ${foto.lon.toFixed(6)}${foto.acc ? ` (±${foto.acc}m)` : ''}` : 'Sem GPS no momento da foto'}<br>
+            ${foto.dataHora}
+          </div>
+          <div class="foto-preview-acoes">
+            <input type="file" accept="image/*" capture="environment" style="display:none" onchange="processarFotoCampo('${campo}', this)">
+            <button type="button" class="btn-refresh-gps" onclick="this.previousElementSibling.click()"><i class="fa-solid fa-rotate"></i> Refazer</button>
+            <button type="button" class="btn-refresh-gps" onclick="removerFotoCampo('${campo}')"><i class="fa-solid fa-trash"></i> Remover</button>
+          </div>
+        </div>`;
+    }
+
+    function removerFotoCampo(campo) {
+      const foto = fotosVistoria[campo];
+      if (foto) URL.revokeObjectURL(foto.url);
+      delete fotosVistoria[campo];
+      renderizarCampoFoto(campo);
+    }
+
+    function limparFotosVistoria() {
+      Object.keys(fotosVistoria).forEach(c => URL.revokeObjectURL(fotosVistoria[c].url));
+      fotosVistoria = {};
+      montarCamposFoto();
+    }
+
+    // GPS novo no momento da foto; se demorar, usa o ultimo GPS conhecido
+    function obterGpsParaFoto() {
+      return new Promise(resolve => {
+        const ultimo = () => resolve(userLat !== null && userLon !== null ? { lat: userLat, lon: userLon, acc: userAcc } : null);
+        if (!("geolocation" in navigator)) return ultimo();
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            userLat = pos.coords.latitude;
+            userLon = pos.coords.longitude;
+            userAcc = Math.round(pos.coords.accuracy);
+            atualizarCoordenadasGpsForm(userLat, userLon, userAcc, "GPS do Lançamento");
+            resolve({ lat: userLat, lon: userLon, acc: userAcc });
+          },
+          ultimo,
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 15000 }
+        );
+      });
+    }
+
+    async function carregarImagem(file) {
+      if (window.createImageBitmap) {
+        try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e) {}
+      }
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    function valorAtualCampo(campo) {
+      if (campo === "bandeiras") return document.getElementById("form-bandeiras").value.trim();
+      const nome = { pressao: "campo-pressao", larva_pupa: "campo-larva-pupa", inseticida: "campo-inseticida", causador: "campo-causador" }[campo];
+      const r = document.querySelector(`input[name="${nome}"]:checked`);
+      if (!r) return "";
+      if (r.value === "Outro") {
+        const outro = document.getElementById("form-causador-outro").value.trim();
+        return outro ? `Outro: ${outro}` : "Outro";
+      }
+      return r.value;
+    }
+
+    async function processarFotoCampo(campo, input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const btn = input.nextElementSibling;
+      if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Carimbando coordenadas...`; }
+
+      try {
+        const [gps, img] = await Promise.all([obterGpsParaFoto(), carregarImagem(file)]);
+        const agora = new Date();
+        const dataHora = `${getDataFormatadaBR(agora)} ${agora.toTimeString().slice(0, 8)}`;
+
+        const escala = Math.min(1, FOTO_LADO_MAX / Math.max(img.width, img.height));
+        const w = Math.round(img.width * escala);
+        const h = Math.round(img.height * escala);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        if (img.close) img.close();
+
+        const p = sedeSelecionada ? sedeSelecionada.properties : {};
+        const valor = valorAtualCampo(campo);
+        const linhas = [
+          `Sede ${p.nome_sede || p.num_sede || '-'}`,
+          `${FOTO_CAMPOS[campo]}${valor ? `: ${valor}` : ''}`,
+          gps ? `Lat: ${gps.lat.toFixed(6)}  Lon: ${gps.lon.toFixed(6)}${gps.acc ? `  ±${gps.acc}m` : ''}` : "GPS indisponível",
+          dataHora
+        ];
+
+        const fs = Math.max(14, Math.round(Math.min(w, h) * 0.034));
+        const pad = Math.round(fs * 0.6);
+        const alturaFaixa = linhas.length * fs * 1.3 + pad * 2;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillRect(0, h - alturaFaixa, w, alturaFaixa);
+        ctx.textBaseline = "top";
+        linhas.forEach((txt, i) => {
+          ctx.font = `${i === 0 ? '700' : '600'} ${fs}px Arial, sans-serif`;
+          ctx.fillStyle = i === 2 ? "#facc15" : "#ffffff";
+          ctx.fillText(txt, pad, h - alturaFaixa + pad + i * fs * 1.3, w - pad * 2);
+        });
+        ctx.font = `700 ${Math.round(fs * 0.8)}px Arial, sans-serif`;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.textAlign = "right";
+        ctx.fillText("BioMonitor", w - pad, h - alturaFaixa + pad);
+        ctx.textAlign = "left";
+
+        const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.82));
+        if (!blob) throw new Error("toBlob falhou");
+
+        if (fotosVistoria[campo]) URL.revokeObjectURL(fotosVistoria[campo].url);
+        fotosVistoria[campo] = {
+          blob: blob,
+          url: URL.createObjectURL(blob),
+          nome: `foto_${campo}_sede${p.num_sede || 'x'}_${agora.getTime()}.jpg`,
+          lat: gps ? gps.lat : null,
+          lon: gps ? gps.lon : null,
+          acc: gps ? gps.acc : null,
+          dataHora: dataHora
+        };
+        renderizarCampoFoto(campo);
+        if (!gps) showToast("Foto salva, mas sem GPS. Ative a localização e refaça se possível.", "error");
+      } catch (err) {
+        console.log("Erro na foto:", err);
+        showToast("Não foi possível processar a foto. Tente novamente.", "error");
+        renderizarCampoFoto(campo);
+      }
+    }
+
+    // Banco local das fotos (IndexedDB): o localStorage nao comporta imagens
+    function abrirBancoFotos() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) return reject(new Error("sem IndexedDB"));
+        const req = indexedDB.open("biomonitor_fotos", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("fotos", { keyPath: "chave" });
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function guardarFotosVistoria(instanceId, fotos) {
+      try {
+        const db = await abrirBancoFotos();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction("fotos", "readwrite");
+          fotos.forEach(f => tx.objectStore("fotos").put({ chave: `${instanceId}|${f.nome}`, instance_id: instanceId, nome: f.nome, blob: f.blob }));
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+        return true;
+      } catch (err) {
+        console.log("Fotos ficaram so na memoria:", err);
+        fotos.forEach(f => fotosEmMemoria.set(`${instanceId}|${f.nome}`, f.blob));
+        return false;
+      }
+    }
+
+    async function lerFotoGuardada(instanceId, nome) {
+      const chave = `${instanceId}|${nome}`;
+      if (fotosEmMemoria.has(chave)) return fotosEmMemoria.get(chave);
+      try {
+        const db = await abrirBancoFotos();
+        const reg = await new Promise((resolve, reject) => {
+          const req = db.transaction("fotos").objectStore("fotos").get(chave);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        db.close();
+        return reg ? reg.blob : null;
+      } catch (e) { return null; }
+    }
+
+    async function apagarFotosGuardadas(instanceId, nomes) {
+      nomes.forEach(n => fotosEmMemoria.delete(`${instanceId}|${n}`));
+      try {
+        const db = await abrirBancoFotos();
+        const tx = db.transaction("fotos", "readwrite");
+        nomes.forEach(n => tx.objectStore("fotos").delete(`${instanceId}|${n}`));
+        await new Promise(resolve => { tx.oncomplete = resolve; tx.onerror = resolve; });
+        db.close();
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // FILA DE ENVIO OFFLINE: a vistoria fica guardada no celular ate ser enviada
+    // =========================================================================
+    const FILA_ENVIO_KEY = "biomonitor_fila_envio";
+    let filaEmProcessamento = false;
+
+    function lerFilaEnvio() {
+      try { return JSON.parse(localStorage.getItem(FILA_ENVIO_KEY) || "[]"); } catch (e) { return []; }
+    }
+
+    function gravarFilaEnvio(fila) {
+      try { localStorage.setItem(FILA_ENVIO_KEY, JSON.stringify(fila)); } catch (e) {}
+      atualizarIndicadorFila();
+    }
+
+    function enfileirarEnvio(instanceId, xml, numSede, nomesFotos = []) {
+      const fila = lerFilaEnvio();
+      if (!fila.some(i => i.instance_id === instanceId)) {
+        fila.push({ instance_id: instanceId, xml: xml, num_sede: numSede, fotos: nomesFotos, criadoEm: new Date().toISOString(), tentativas: 0 });
+      }
+      gravarFilaEnvio(fila);
+    }
+
+    function atualizarIndicadorFila() {
+      const qtd = lerFilaEnvio().length;
+      const btn = document.getElementById("btn-fila-envio");
+      const span = document.getElementById("fila-envio-qtd");
+      if (span) span.textContent = qtd;
+      if (btn) btn.style.display = qtd > 0 ? "inline-flex" : "none";
+    }
+
+    async function processarFilaEnvio(manual = false) {
+      if (filaEmProcessamento) return;
+      const fila = lerFilaEnvio();
+      if (fila.length === 0) {
+        if (manual) showToast("Nenhuma vistoria pendente de envio.", "success");
+        return;
+      }
+      if (!navigator.onLine) {
+        atualizarIndicadorFila();
+        if (manual) showToast(`Sem sinal. ${fila.length} vistoria(s) continuam guardadas no celular.`, "info");
+        return;
+      }
+      if (!KOBO_SUBMISSION_URL) {
+        if (manual) showToast("Kobo ainda não configurado. As vistorias continuam guardadas no celular.", "info");
+        return;
+      }
+      filaEmProcessamento = true;
+      const restantes = [];
+      let enviadas = 0;
+      for (const item of fila) {
+        try {
+          const fd = new FormData();
+          fd.append("xml_submission_file", new Blob([item.xml], { type: "text/xml" }), "submission.xml");
+          // Cada foto vai como anexo com o mesmo nome citado no XML
+          for (const nome of (item.fotos || [])) {
+            const blob = await lerFotoGuardada(item.instance_id, nome);
+            if (blob) fd.append(nome, blob, nome);
+          }
+          // O Kobo ignora reenvios com o mesmo instanceID, entao repetir e seguro
+          await fetch(KOBO_SUBMISSION_URL, { method: "POST", body: fd, mode: "no-cors" });
+          if (item.fotos && item.fotos.length) await apagarFotosGuardadas(item.instance_id, item.fotos);
+          enviadas++;
+        } catch (err) {
+          item.tentativas = (item.tentativas || 0) + 1;
+          item.ultimaTentativa = new Date().toISOString();
+          restantes.push(item);
+        }
+      }
+      // Preserva vistorias salvas enquanto a fila era processada
+      const processados = new Set(fila.map(i => i.instance_id));
+      const novas = lerFilaEnvio().filter(i => !processados.has(i.instance_id));
+      gravarFilaEnvio(restantes.concat(novas));
+      filaEmProcessamento = false;
+
+      if (enviadas > 0 && restantes.length === 0) {
+        showToast(`✅ ${enviadas} vistoria(s) enviada(s) para a nuvem.`, "success");
+      } else if (restantes.length > 0) {
+        showToast(`⚠️ ${restantes.length} vistoria(s) não foram enviadas. Nova tentativa automática ao voltar o sinal.`, "error");
+      }
+    }
+
+    function iniciarFilaEnvio() {
+      atualizarIndicadorFila();
+      window.addEventListener("online", () => processarFilaEnvio());
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) processarFilaEnvio(); });
+      setInterval(() => processarFilaEnvio(), 60000);
+      processarFilaEnvio();
+    }
+
+    function mostrarDataAtualizacao() {
+      const el = document.getElementById("dados-atualizacao");
+      if (!el || typeof DADOS_ATUALIZADO_EM === "undefined") return;
+      const d = new Date(DADOS_ATUALIZADO_EM);
+      if (isNaN(d.getTime())) return;
+      const horas = Math.floor((Date.now() - d.getTime()) / 3600000);
+      el.textContent = `Base atualizada em ${getDataFormatadaBR(d)} ${getHoraFormatadaBR(d)}` + (horas >= 48 ? " (desatualizada)" : "");
+      if (horas >= 48) el.style.color = "#fbbf24";
+    }
+
+    function showToast(mensagem, tipo = "success") {
+      const toast = document.getElementById("toast");
+      toast.className = tipo === "error" ? "show error" : "show";
+      toast.querySelector("span").innerText = mensagem;
+      toast.querySelector("i").className = tipo === "error" ? "fa-solid fa-circle-exclamation" : "fa-solid fa-circle-check";
+      setTimeout(() => {
+        toast.className = "";
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

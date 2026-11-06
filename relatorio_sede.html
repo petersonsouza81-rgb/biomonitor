@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BioMonitor | Relatório por Sede</title>
+
+  <link rel="icon" type="image/png" sizes="192x192" href="logos/icon-192.png?v=biomonitor">
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=biomonitor">
+  <meta name="theme-color" content="#0f172a">
+
+  <!-- Fontes & Ícones -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --border-color: #334155;
+      --primary: #15803d;
+      --primary-light: #22c55e;
+      --primary-dark: #166534;
+      --status-verde: #22c55e;
+      --status-amarelo: #f59e0b;
+      --status-vermelho: #ef4444;
+      --status-baixa: #38bdf8;
+      --status-media: #f97316;
+      --status-alta: #ef4444;
+      --doc-text: #0f172a;
+      --doc-muted: #64748b;
+      --doc-border: #e2e8f0;
+      --doc-soft: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--doc-text);
+      min-height: 100vh;
+    }
+
+    /* BARRA DE CONTROLE (não sai no PDF) */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 10px;
+      color: #f8fafc;
+    }
+    .toolbar .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 15px;
+      margin-right: auto;
+      align-self: center;
+    }
+    .toolbar .brand img {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+    }
+    .toolbar label, .campo-sedes {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+    .toolbar .btn-sedes, .toolbar input {
+      background: var(--bg-dark);
+      color: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .seletor-sedes {
+      position: relative;
+      min-width: 300px;
+      max-width: 100%;
+    }
+    .btn-sedes {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .btn-sedes span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .painel-sedes {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: min(460px, calc(100vw - 32px));
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      z-index: 2000;
+    }
+    .painel-sedes.aberto {
+      display: block;
+    }
+    .painel-sedes input[type="search"] {
+      width: 100%;
+    }
+    .painel-acoes {
+      display: flex;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .painel-acoes .btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .lista-sedes {
+      max-height: 300px;
+      overflow-y: auto;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .toolbar .lista-sedes label {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 7px 4px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #f8fafc;
+      cursor: pointer;
+    }
+    .lista-sedes label small {
+      display: block;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    .toolbar .lista-sedes input {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .painel-rodape {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+      background: #334155;
+    }
+    .btn-pdf {
+      background: var(--primary);
+    }
+    .btn-pdf:hover {
+      background: var(--primary-dark);
+    }
+
+    /* DOCUMENTO A4 */
+    .doc {
+      width: 210mm;
+      max-width: calc(100% - 24px);
+      margin: 18px auto 40px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+      padding: 14mm 12mm;
+    }
+    .doc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .doc-header img {
+      width: 120px;
+      height: 46px;
+      object-fit: contain;
+      object-position: right;
+    }
+    /* O arquivo do logo tem margem branca: a margem negativa compensa o espaço */
+    .doc-header img.logo-marca {
+      height: 88px;
+      margin: -8px 0 -8px -14px;
+      object-position: left;
+    }
+    .doc-title {
+      text-align: center;
+      flex: 1;
+    }
+    .doc-title h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .doc-title p {
+      font-size: 11.5px;
+      color: var(--doc-muted);
+      margin-top: 2px;
+    }
+
+    .section {
+      margin-bottom: 14px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--primary);
+      padding: 6px 10px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ident-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px 14px;
+      font-size: 12px;
+    }
+    .ident-grid div span {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--doc-muted);
+      text-transform: uppercase;
+    }
+    .ident-grid div strong {
+      font-weight: 700;
+    }
+    .ident-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    .declaracao {
+      font-size: 12.5px;
+      line-height: 1.6;
+      background: #f0fdf4;
+      border-left: 4px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 4px;
+      text-align: justify;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .kpi {
+      border: 1px solid var(--doc-border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--doc-soft);
+    }
+    .kpi-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--doc-muted);
+      text-transform: uppercase;
+    }
+    .kpi-value {
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+    .kpi-sub {
+      font-size: 10.5px;
+      color: var(--doc-muted);
+    }
+
+    /* JANELA DE VISTORIAS (linha do tempo) */
+    .timeline {
+      position: relative;
+      height: 92px;
+      margin: 6px 18px 4px;
+    }
+    .timeline-axis {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 38px;
+      height: 4px;
+      background: var(--doc-border);
+      border-radius: 2px;
+    }
+    .timeline-dot {
+      position: absolute;
+      top: 30px;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 1px #cbd5e1;
+    }
+    .timeline-dot.inseticida::after {
+      content: "";
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      margin-left: -4px;
+      background: var(--primary);
+      transform: rotate(45deg);
+    }
+    .timeline-label {
+      position: absolute;
+      top: 56px;
+      transform: translateX(-50%);
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--doc-muted);
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .legenda {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 10.5px;
+      color: var(--doc-muted);
+      margin-top: 4px;
+    }
+    .legenda i.bola {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: -1px;
+    }
+    .legenda i.losango {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      transform: rotate(45deg);
+      margin-right: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 9.5px;
+      padding: 6px 5px;
+      border: 1px solid var(--doc-border);
+      text-align: left;
+    }
+    td {
+      padding: 5px;
+      border: 1px solid var(--doc-border);
+      vertical-align: top;
+    }
+    tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 10px;
+      color: #fff;
+    }
+
+    .tratativas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .tratativa-card {
+      border: 1px solid var(--doc-border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .tratativa-card h4 {
+      font-size: 11.5px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .tratativa-card ul {
+      list-style: none;
+    }
+    .tratativa-card li {
+      padding: 2px 0;
+      display: flex;
+      gap: 6px;
+    }
+    .tratativa-card li i {
+      width: 14px;
+      text-align: center;
+      margin-top: 2px;
+      color: var(--primary);
+    }
+    .resumo-tratativas {
+      font-size: 11.5px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .aviso-lote {
+      max-width: 210mm;
+      margin: 16px auto -4px;
+      padding: 0 12px;
+      color: #cbd5e1;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .mapa-sede {
+      height: 195px;
+      border-radius: 8px;
+      border: 1px solid var(--doc-border);
+    }
+
+    .fotos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .foto-card {
+      border: 1px solid var(--doc-border);
+      border-radius: 8px;
+      overflow: hidden;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .foto-card img {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      display: block;
+      background: #f1f5f9;
+    }
+    .foto-card div {
+      font-size: 10px;
+      padding: 5px 7px;
+      line-height: 1.4;
+    }
+    .aviso-fotos {
+      font-size: 11.5px;
+      color: var(--doc-muted);
+      background: var(--doc-soft);
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .doc-footer {
+      margin-top: 18px;
+      border-top: 1px solid var(--doc-border);
+      padding-top: 6px;
+      font-size: 9.5px;
+      color: var(--doc-muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .vazio {
+      font-size: 12px;
+      color: var(--doc-muted);
+      text-align: center;
+      padding: 18px;
+    }
+
+    @media (max-width: 760px) {
+      .doc {
+        padding: 16px 12px;
+        max-width: calc(100% - 16px);
+      }
+      .ident-grid, .kpis {
+        grid-template-columns: 1fr 1fr;
+      }
+      .tratativas, .fotos-grid {
+        grid-template-columns: 1fr;
+      }
+      .seletor-sedes {
+        min-width: 0;
+        width: 100%;
+      }
+      .toolbar label, .campo-sedes {
+        flex: 1 1 100%;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+    }
+
+    @media print {
+      /* Definir as caixas de margem substitui o cabeçalho e o rodapé do navegador */
+      @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 14mm;
+        @top-left { content: ""; }
+        @top-center { content: ""; }
+        @top-right { content: ""; }
+        @bottom-left { content: ""; }
+        @bottom-right { content: ""; }
+        @bottom-center {
+          content: "Página " counter(page) " de " counter(pages);
+          font: 600 10px Arial, sans-serif;
+          color: #64748b;
+        }
+      }
+      .doc-footer {
+        display: none;
+      }
+      body {
+        background: #fff !important;
+      }
+      .toolbar, .aviso-lote {
+        display: none !important;
+      }
+      .doc + .doc {
+        break-before: page;
+        page-break-before: always;
+        padding-top: 10px;
+      }
+      .doc {
+        width: auto;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+      .ident-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .kpis {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .tratativas {
+        grid-template-columns: 1fr 1fr;
+      }
+      .fotos-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .leaflet-control-container {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div class="brand">
+      <img src="logos/BioMonitor_512.jpg" alt="BioMonitor" onerror="this.src='logos/icon-192.png'">
+      Relatório por Sede
+    </div>
+    <div class="campo-sedes">Sede / Fazenda
+      <div class="seletor-sedes" id="seletor-sedes">
+        <button type="button" class="btn-sedes" onclick="alternarPainelSedes(event)">
+          <span id="sedes-resumo"></span><i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="painel-sedes" id="painel-sedes">
+          <input type="search" id="busca-sedes" placeholder="Buscar sede, fazenda ou proprietário..." oninput="filtrarListaSedes()">
+          <div class="painel-acoes">
+            <button type="button" class="btn" onclick="marcarTodasComVistoria()"><i class="fa-solid fa-check-double"></i> Todas com vistoria no período</button>
+            <button type="button" class="btn" onclick="limparSedes()">Limpar</button>
+          </div>
+          <div class="lista-sedes" id="lista-sedes"></div>
+          <div class="painel-rodape">
+            <span id="sedes-contagem"></span>
+            <button type="button" class="btn btn-pdf" onclick="fecharPainelSedes()">Gerar relatórios</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <label>De (opcional)
+      <input type="date" id="filtro-de" onchange="gerarRelatorio()">
+    </label>
+    <label>Até (opcional)
+      <input type="date" id="filtro-ate" onchange="gerarRelatorio()">
+    </label>
+    <button class="btn" onclick="BioMonitorAtualizacao.abrir()" title="Buscar vistorias e fotos novas no KoboToolbox"><i class="fa-solid fa-cloud-arrow-down"></i> Atualizar dados</button>
+    <button class="btn btn-pdf" id="btn-pdf" onclick="salvarPdf()"><i class="fa-solid fa-file-pdf"></i> Salvar PDF</button>
+  </div>
+
+  <div id="relatorios"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Dados Geográficos e Vistorias -->
+  <script src="dados_mapa.js"></script>
+  <!-- Botão Atualizar dados (GitHub Actions) -->
+  <script src="atualizar_dados.js"></script>
+  <script>
+    const LIM_VERDE = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.verde_max_dias) || 7;
+    const LIM_AMARELO = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.amarelo_max_dias) || 15;
+    const SEDES = (typeof DADOS_SEDES !== "undefined" ? DADOS_SEDES.features : [])
+      .slice().sort((a, b) => (parseInt(a.properties.num_sede) || 0) - (parseInt(b.properties.num_sede) || 0));
+    const VISTORIAS = typeof DADOS_VISTORIAS_KOBO !== "undefined" ? DADOS_VISTORIAS_KOBO : [];
+    const SEDE_PADRAO = "30";
+    const TODAS = "todas";
+
+    // Sedes marcadas; modoTodas acompanha o período quando as datas mudam
+    let selecao = new Set();
+    let modoTodas = false;
+    let selecaoAlterada = false;
+    const MAX_FOTOS = 6;
+
+    const ROTULO_FOTO = {
+      pressao: "Pressão",
+      bandeiras: "N° de Bandeiras",
+      larva_pupa: "Larva e Pupa",
+      inseticida: "Inseticida"
+    };
+    const COR_PRESSAO = { "Baixa": "#38bdf8", "Média": "#f97316", "Alta": "#ef4444" };
+
+    let mapas = [];
+    let mapasProntos = [];
+
+    function esc(str) {
+      return String(str === undefined || str === null ? "" : str)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // "dd/mm/aaaa" + "hh:mm" -> Date
+    function parseDataBR(data, hora) {
+      if (!data) return null;
+      // Aceita dd/mm/aaaa e aaaa-mm-dd
+      const iso = String(data).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const p = iso ? [iso[3], iso[2], iso[1]] : String(data).split("/");
+      if (p.length !== 3) return null;
+      const [hh, mm] = String(hora || "00:00").split(":");
+      const d = new Date(+p[2], +p[1] - 1, +p[0], +hh || 0, +mm || 0);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function fmtData(d) {
+      return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    }
+
+    function diasEntre(a, b) {
+      const ua = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+      const ub = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.round((ub - ua) / 86400000);
+    }
+
+    function badgePressao(p) {
+      return p ? `<span class="badge" style="background:${COR_PRESSAO[p] || '#94a3b8'}">${esc(p)}</span>` : "-";
+    }
+
+    function statusPorDias(dias) {
+      if (dias === null) return { cor: "#ef4444", texto: "Sem vistoria" };
+      if (dias <= LIM_VERDE) return { cor: "#16a34a", texto: "Em dia" };
+      if (dias <= LIM_AMARELO) return { cor: "#d97706", texto: "Próxima do prazo" };
+      return { cor: "#dc2626", texto: "Atrasada" };
+    }
+
+    function sedesComVistoria() {
+      return SEDES.map(f => String(f.properties.num_sede)).filter(n => vistoriasDaSede(n).length > 0);
+    }
+
+    function montarSeletor() {
+      const daUrl = new URLSearchParams(location.search).get("sede") || SEDE_PADRAO;
+      const existe = n => SEDES.some(f => String(f.properties.num_sede) === n);
+      if (daUrl === TODAS) {
+        modoTodas = true;
+      } else {
+        selecao = new Set(daUrl.split(",").filter(existe));
+      }
+      if (!modoTodas && !selecao.size && existe(SEDE_PADRAO)) selecao.add(SEDE_PADRAO);
+    }
+
+    function montarListaSedes() {
+      const contagem = {};
+      SEDES.forEach(f => { contagem[f.properties.num_sede] = vistoriasDaSede(f.properties.num_sede).length; });
+      document.getElementById("lista-sedes").innerHTML = [...SEDES].sort((a, b) => (contagem[b.properties.num_sede] > 0) - (contagem[a.properties.num_sede] > 0)).map(f => {
+        const p = f.properties;
+        const n = contagem[p.num_sede];
+        return `<label data-busca="${esc(`${p.nome_sede} ${p.fa_completo || p.fazenda || ""} ${p.proprietario || ""}`.toLowerCase())}">
+          <input type="checkbox" value="${esc(p.num_sede)}" ${selecao.has(String(p.num_sede)) ? "checked" : ""} onchange="marcarSede(this)">
+          <span>Sede ${esc(p.nome_sede || p.num_sede)}<small>${esc(p.fa_completo || p.fazenda || "Sem fazenda")} • ${n} vistoria${n === 1 ? "" : "s"}</small></span>
+        </label>`;
+      }).join("");
+      filtrarListaSedes();
+    }
+
+    function filtrarListaSedes() {
+      const termo = document.getElementById("busca-sedes").value.toLowerCase().trim();
+      document.querySelectorAll("#lista-sedes label").forEach(l => {
+        l.style.display = l.dataset.busca.includes(termo) ? "" : "none";
+      });
+    }
+
+    function atualizarResumoSedes() {
+      const n = selecao.size;
+      const unica = n === 1 ? SEDES.find(f => selecao.has(String(f.properties.num_sede))) : null;
+      document.getElementById("sedes-resumo").textContent = modoTodas
+        ? "Todas as sedes com vistoria no período"
+        : unica ? `Sede ${unica.properties.nome_sede || unica.properties.num_sede}`
+        : n ? `${n} sedes selecionadas` : "Selecione as sedes";
+      document.getElementById("sedes-contagem").textContent = `${n} selecionada${n === 1 ? "" : "s"}`;
+    }
+
+    function sincronizarCaixas() {
+      document.querySelectorAll("#lista-sedes input").forEach(c => { c.checked = selecao.has(c.value); });
+      selecaoAlterada = true;
+      atualizarResumoSedes();
+    }
+
+    function marcarSede(caixa) {
+      modoTodas = false;
+      if (caixa.checked) selecao.add(caixa.value); else selecao.delete(caixa.value);
+      selecaoAlterada = true;
+      atualizarResumoSedes();
+    }
+
+    function marcarTodasComVistoria() {
+      modoTodas = true;
+      selecao = new Set(sedesComVistoria());
+      sincronizarCaixas();
+    }
+
+    function limparSedes() {
+      modoTodas = false;
+      selecao = new Set();
+      sincronizarCaixas();
+    }
+
+    function alternarPainelSedes(e) {
+      e.preventDefault();
+      const painel = document.getElementById("painel-sedes");
+      if (painel.classList.contains("aberto")) return fecharPainelSedes();
+      if (modoTodas) selecao = new Set(sedesComVistoria());
+      montarListaSedes();
+      atualizarResumoSedes();
+      painel.classList.add("aberto");
+    }
+
+    // Os relatórios só são refeitos ao fechar, para não recarregar a cada marcação
+    function fecharPainelSedes() {
+      document.getElementById("painel-sedes").classList.remove("aberto");
+      if (selecaoAlterada) gerarRelatorio();
+      selecaoAlterada = false;
+    }
+
+    document.addEventListener("click", e => {
+      const painel = document.getElementById("painel-sedes");
+      if (painel.classList.contains("aberto") && !document.getElementById("seletor-sedes").contains(e.target)) fecharPainelSedes();
+    });
+
+    function vistoriasDaSede(numSede) {
+      const de = document.getElementById("filtro-de").value;
+      const ate = document.getElementById("filtro-ate").value;
+      const dDe = de ? new Date(de + "T00:00:00") : null;
+      const dAte = ate ? new Date(ate + "T23:59:59") : null;
+      return VISTORIAS
+        .filter(v => String(v.num_sede) === String(numSede))
+        .map(v => ({ ...v, _data: parseDataBR(v.data_vistoria, v.hora_vistoria) }))
+        .filter(v => v._data && (!dDe || v._data >= dDe) && (!dAte || v._data <= dAte))
+        .map(v => ({ ...v, data_vistoria: fmtData(v._data) }))
+        .sort((a, b) => a._data - b._data);
+    }
+
+    function gerarRelatorio() {
+      const el = document.getElementById("relatorios");
+      if (modoTodas) selecao = new Set(sedesComVistoria());
+      atualizarResumoSedes();
+      history.replaceState(null, "", `?sede=${modoTodas ? TODAS : [...selecao].join(",")}`);
+
+      const sedes = SEDES.filter(f => selecao.has(String(f.properties.num_sede)));
+      const lote = modoTodas || sedes.length > 1;
+
+      mapas.forEach(m => m.remove());
+      mapas = [];
+      mapasProntos = [];
+      if (!sedes.length) {
+        el.innerHTML = `<div class="doc"><div class="vazio">${modoTodas
+          ? "Nenhuma sede tem vistoria no período selecionado."
+          : "Selecione ao menos uma sede em Sede / Fazenda."}</div></div>`;
+        return;
+      }
+
+      const semVistoria = sedes.filter(f => !vistoriasDaSede(f.properties.num_sede).length).length;
+      const aviso = lote
+        ? `<div class="aviso-lote"><strong>${sedes.length} relatório${sedes.length === 1 ? "" : "s"}</strong> no período.
+           ${modoTodas ? "Sedes sem vistoria no período não entram. " : ""}${semVistoria ? `${semVistoria} sem vistoria no período. ` : ""}O PDF sai em um único arquivo.</div>`
+        : "";
+      el.innerHTML = aviso + sedes.map(montarRelatorioSede).join("");
+      sedes.forEach(f => montarMapa(f, vistoriasDaSede(f.properties.num_sede)));
+    }
+
+    function montarRelatorioSede(feat) {
+      const p = feat.properties;
+      const vis = vistoriasDaSede(p.num_sede);
+      const hoje = new Date();
+      const primeira = vis.length ? vis[0]._data : null;
+      const ultima = vis.length ? vis[vis.length - 1]._data : null;
+      const ultimaV = vis.length ? vis[vis.length - 1] : null;
+
+      // Indicadores
+      const intervalos = [];
+      for (let i = 1; i < vis.length; i++) intervalos.push(diasEntre(vis[i - 1]._data, vis[i]._data));
+      const intervaloMedio = intervalos.length ? (intervalos.reduce((a, b) => a + b, 0) / intervalos.length) : null;
+      const diasUltima = ultima ? Math.max(0, diasEntre(ultima, hoje)) : null;
+      const st = statusPorDias(diasUltima);
+      const nInseticida = vis.filter(v => v.inseticida === "Aplicado").length;
+      const contPressao = { "Alta": 0, "Média": 0, "Baixa": 0 };
+      vis.forEach(v => { if (contPressao[v.pressao] !== undefined) contPressao[v.pressao]++; });
+
+      const de = document.getElementById("filtro-de").value;
+      const ate = document.getElementById("filtro-ate").value;
+      const periodoTexto = (de || ate)
+        ? `Período filtrado: ${de ? fmtData(new Date(de + "T00:00:00")) : "início"} a ${ate ? fmtData(new Date(ate + "T00:00:00")) : "hoje"}`
+        : "Todo o histórico de vistorias";
+
+      const nomeSede = p.nome_sede || `Sede ${p.num_sede}`;
+      const fazenda = p.fa_completo || p.fazenda || "Sem informação";
+
+      // Pressão e larvas/pupas são levantamento; inseticida e bandeiras são tratativas
+      const nBandeiras = vis.filter(v => parseInt(v.bandeiras) > 0).length;
+      const tratativas = [];
+      if (nInseticida) tratativas.push(`<strong>${nInseticida} aplicação(ões) de inseticida</strong>`);
+      if (nBandeiras) tratativas.push(`<strong>uso de bandeiras em ${nBandeiras} visita(s)</strong>`);
+      const fraseTratativas = tratativas.length
+        ? ` Como tratativa${tratativas.length > 1 ? "s" : ""}, houve ${tratativas.join(" e ")}.`
+        : "";
+
+      const declaracao = vis.length
+        ? `Declaramos que a equipe de monitoramento realizou o <strong>levantamento de infestação de mosca-dos-estábulos</strong>
+           na <strong>Sede ${esc(nomeSede)}</strong>, pertencente à <strong>${esc(fazenda)}</strong> (proprietário(a): ${esc(p.proprietario || "-")}),
+           totalizando <strong>${vis.length} vistoria${vis.length === 1 ? "" : "s"}</strong> entre <strong>${fmtData(primeira)}</strong> e <strong>${fmtData(ultima)}</strong>.
+           Em cada visita foram avaliados o nível de pressão da mosca e a presença de larvas e pupas, conforme detalhado neste relatório.${fraseTratativas}`
+        : `Não há vistorias registradas para a <strong>Sede ${esc(nomeSede)}</strong> (${esc(fazenda)}) no período selecionado.`;
+
+      return `<div class="doc">
+        <div class="doc-header">
+          <img class="logo-marca" src="logos/BioMonitor_512.jpg" alt="BioMonitor" onerror="this.style.visibility='hidden'">
+          <div class="doc-title">
+            <h1>Relatório de Monitoramento de Sede</h1>
+            <p>Levantamento e tratativas de mosca-dos-estábulos • ${esc(periodoTexto)}</p>
+          </div>
+          <img src="logos/BioMonitor_512.jpg" alt="BioMonitor" onerror="this.src='logos/icon-192.png'">
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="fa-solid fa-house-chimney"></i> Identificação</div>
+          <div class="ident-grid">
+            <div><span>Sede</span><strong>${esc(nomeSede)}</strong></div>
+            <div><span>Fazenda</span><strong>${esc(fazenda)}</strong></div>
+            <div><span>Proprietário(a)</span><strong>${esc(p.proprietario || "-")}</strong></div>
+            <div><span>Região</span><strong>${esc(p.regiao || "-")}</strong></div>
+            <div><span>Coordenada da sede</span><strong>${esc(p.localizacao_sede || "-")}</strong></div>
+            <div><span>Status atual</span><strong style="color:${st.cor}">${st.texto}${diasUltima !== null ? ` (${diasUltima} dia${diasUltima === 1 ? "" : "s"} desde a última)` : ""}</strong></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="declaracao">${declaracao}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="fa-solid fa-chart-simple"></i> Indicadores</div>
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-label">Total de vistorias</div><div class="kpi-value" style="color:var(--primary)">${vis.length}</div><div class="kpi-sub">${primeira ? `${fmtData(primeira)} a ${fmtData(ultima)}` : "Sem registros"}</div></div>
+            <div class="kpi"><div class="kpi-label">Intervalo médio</div><div class="kpi-value">${intervaloMedio !== null ? intervaloMedio.toFixed(1).replace(".", ",") : "-"}</div><div class="kpi-sub">dias entre vistorias</div></div>
+            <div class="kpi"><div class="kpi-label">Última pressão</div><div class="kpi-value" style="color:${COR_PRESSAO[ultimaV && ultimaV.pressao] || 'inherit'}">${ultimaV ? esc(ultimaV.pressao || "-") : "-"}</div><div class="kpi-sub">Alta ${contPressao["Alta"]} • Média ${contPressao["Média"]} • Baixa ${contPressao["Baixa"]}</div></div>
+            <div class="kpi"><div class="kpi-label">Inseticida aplicado</div><div class="kpi-value" style="color:var(--primary)">${nInseticida}</div><div class="kpi-sub">de ${vis.length} vistoria${vis.length === 1 ? "" : "s"}</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="fa-solid fa-timeline"></i> Janela de vistorias</div>
+          ${montarLinhaDoTempo(vis)}
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="fa-solid fa-table-list"></i> Histórico de vistorias</div>
+          ${montarTabela(vis)}
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="fa-solid fa-screwdriver-wrench"></i> Tratativas realizadas</div>
+          ${vis.length ? `
+            <div class="resumo-tratativas">
+              <strong>Resumo:</strong> inseticida aplicado em <strong>${nInseticida}</strong> de ${vis.length} visita(s);
+              bandeiras usadas em <strong>${nBandeiras}</strong> visita(s).
+            </div>
+            <div class="tratativas">${vis.slice().reverse().map(montarCardTratativa).join("")}</div>
+          ` : `<div class="vazio">Sem tratativas registradas no período.</div>`}
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> Localização da sede e pontos das vistorias</div>
+          <div class="mapa-sede" id="mapa-sede-${esc(p.num_sede)}"></div>
+          <div class="legenda" style="margin-top:6px;">
+            <span><i class="bola" style="background:#15803d"></i>Sede</span>
+            <span><i class="bola" style="background:#facc15"></i>GPS das vistorias</span>
+          </div>
+        </div>
+
+        <div class="section" style="break-inside:auto; page-break-inside:auto;">
+          <div class="section-title" style="break-after:avoid; page-break-after:avoid;"><i class="fa-solid fa-camera"></i> Evidências fotográficas (últimas fotos)</div>
+          ${montarFotos(vis)}
+        </div>
+
+        <div class="doc-footer">
+          <span>Gerado pelo BioMonitor em ${fmtData(hoje)} ${hoje.toTimeString().slice(0, 5)}</span>
+          <span>${typeof DADOS_ATUALIZADO_EM !== "undefined" ? `Base atualizada em ${fmtData(new Date(DADOS_ATUALIZADO_EM))}` : ""}</span>
+        </div>
+      </div>`;
+    }
+
+    function montarLinhaDoTempo(vis) {
+      if (!vis.length) return `<div class="vazio">Nenhuma vistoria no período.</div>`;
+      const ini = vis[0]._data;
+      const fim = vis[vis.length - 1]._data;
+      const total = Math.max(1, fim - ini);
+      const dots = vis.map((v, i) => {
+        const pct = vis.length === 1 ? 50 : ((v._data - ini) / total) * 100;
+        // Rótulos alternados para não sobrepor vistorias próximas
+        const top = i % 2 === 0 ? 56 : -2;
+        return `
+          <div class="timeline-dot ${v.inseticida === "Aplicado" ? "inseticida" : ""}" style="left:${pct}%; background:${COR_PRESSAO[v.pressao] || "#94a3b8"}" title="${esc(v.data_vistoria)} - ${esc(v.pressao)}"></div>
+          <div class="timeline-label" style="left:${pct}%; top:${top}px;">${esc(v.data_vistoria.slice(0, 5))}<br>${esc(v.bandeiras !== undefined && v.bandeiras !== "" ? v.bandeiras + " band." : "")}</div>`;
+      }).join("");
+      const dias = diasEntre(ini, fim);
+      return `
+        <div class="timeline">
+          <div class="timeline-axis"></div>
+          ${dots}
+        </div>
+        <div class="legenda">
+          <span><strong>Período monitorado:</strong> ${fmtData(ini)} a ${fmtData(fim)} (${dias} dia${dias === 1 ? "" : "s"})</span>
+          <span><i class="bola" style="background:#ef4444"></i>Alta</span>
+          <span><i class="bola" style="background:#f97316"></i>Média</span>
+          <span><i class="bola" style="background:#38bdf8"></i>Baixa</span>
+          <span><i class="losango"></i>Inseticida aplicado</span>
+        </div>`;
+    }
+
+    function montarTabela(vis) {
+      if (!vis.length) return `<div class="vazio">Nenhuma vistoria no período.</div>`;
+      const linhas = vis.slice().reverse().map((v, i) => {
+        return `
+          <tr>
+            <td>${vis.length - i}</td>
+            <td><strong>${esc(v.data_vistoria)}</strong><br>${esc(v.hora_vistoria || "")}</td>
+            <td>${badgePressao(v.pressao)}</td>
+            <td style="text-align:center;font-weight:700;">${esc(v.bandeiras !== undefined ? v.bandeiras : "-")}</td>
+            <td>${esc(v.larva_pupa || "-")}</td>
+            <td>${esc(v.inseticida || "-")}</td>
+          </tr>`;
+      }).join("");
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Data</th><th>Pressão</th><th>Bandeiras</th><th>Larva/Pupa</th><th>Inseticida</th></tr></thead>
+            <tbody>${linhas}</tbody>
+          </table>
+        </div>`;
+    }
+
+    function montarCardTratativa(v) {
+      const itens = [];
+      itens.push(v.inseticida === "Aplicado"
+        ? `<li><i class="fa-solid fa-spray-can"></i><span><strong>Aplicação de inseticida realizada</strong></span></li>`
+        : `<li><i class="fa-solid fa-ban"></i><span>Inseticida não aplicado</span></li>`);
+      if (v.bandeiras !== undefined && v.bandeiras !== "") {
+        itens.push(`<li><i class="fa-solid fa-flag"></i><span>${esc(v.bandeiras)} bandeira(s) registradas</span></li>`);
+      }
+      if (v.observacoes) {
+        itens.push(`<li><i class="fa-solid fa-comment"></i><span>${esc(v.observacoes)}</span></li>`);
+      }
+      return `
+        <div class="tratativa-card" style="border-left:4px solid ${COR_PRESSAO[v.pressao] || "#94a3b8"}">
+          <h4><span>${esc(v.data_vistoria)} ${esc(v.hora_vistoria || "")}</span>${badgePressao(v.pressao)}</h4>
+          <ul>${itens.join("")}</ul>
+        </div>`;
+    }
+
+    function montarFotos(vis) {
+      const fotos = [];
+      vis.slice().reverse().forEach(v => {
+        // A foto de causador traz o causador carimbado na imagem, que não sai neste relatório
+        (v.fotos_arquivos || []).filter(f => f.campo !== "causador")
+          .forEach(f => fotos.push({ ...f, data: v.data_vistoria, hora: v.hora_vistoria }));
+      });
+      if (!fotos.length) {
+        return `<div class="aviso-fotos"><i class="fa-solid fa-camera"></i> Nenhuma foto registrada para esta sede no período.<br>
+          Se a vistoria é recente, clique em "Atualizar dados".</div>`;
+      }
+      return `<div class="fotos-grid">${fotos.slice(0, MAX_FOTOS).map(f => `
+        <div class="foto-card">
+          <img src="${esc(f.arquivo)}" alt="Foto ${esc(ROTULO_FOTO[f.campo] || f.campo)}" loading="eager">
+          <div><strong>${esc(ROTULO_FOTO[f.campo] || f.campo)}</strong><br>${esc(f.data)} ${esc(f.hora || "")}</div>
+        </div>`).join("")}</div>
+        ${fotos.length > MAX_FOTOS ? `<div class="legenda" style="margin-top:6px;">Exibindo as ${MAX_FOTOS} fotos mais recentes de ${fotos.length} registradas.</div>` : ""}`;
+    }
+
+    function montarMapa(feat, vis) {
+      const [lon, lat] = feat.geometry.coordinates;
+      // Sem animação e com tiles extras em volta: o PDF sai sem quadros cinza
+      const mapa = L.map(`mapa-sede-${feat.properties.num_sede}`, { zoomControl: true, attributionControl: false, fadeAnimation: false, zoomAnimation: false })
+        .setView([lat, lon], 15);
+      const fundo = L.tileLayer("https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", { maxZoom: 20, keepBuffer: 6 });
+      mapasProntos.push(new Promise(resolve => fundo.once("load", resolve)));
+      fundo.addTo(mapa);
+      mapas.push(mapa);
+
+      const grupo = L.featureGroup().addTo(mapa);
+      L.circleMarker([lat, lon], { radius: 9, color: "#fff", weight: 3, fillColor: "#15803d", fillOpacity: 1 })
+        .bindTooltip(`Sede ${esc(feat.properties.nome_sede || feat.properties.num_sede)}`, { permanent: true, direction: "top", offset: [0, -8] })
+        .addTo(grupo);
+      vis.forEach(v => {
+        const vl = parseFloat(v.lat), vn = parseFloat(v.lon);
+        if (isNaN(vl) || isNaN(vn)) return;
+        // Pontos muito longe da sede (GPS errado) não deslocam o enquadramento do mapa
+        if (v.distancia_sede_metros !== "" && v.distancia_sede_metros > 2000) return;
+        L.circleMarker([vl, vn], { radius: 6, color: "#0f172a", weight: 1.5, fillColor: "#facc15", fillOpacity: 1 })
+          .bindTooltip(`${esc(v.data_vistoria)} • ${esc(v.pressao)}`)
+          .addTo(grupo);
+      });
+      if (grupo.getLayers().length > 1) mapa.fitBounds(grupo.getBounds().pad(0.15), { maxZoom: 17 });
+    }
+
+    // Espera mapas e fotos para o PDF nao sair com partes em branco
+    function aguardarConteudo() {
+      const fotos = [...document.querySelectorAll("#relatorios img")].filter(i => !i.complete)
+        .map(i => new Promise(resolve => { i.onload = resolve; i.onerror = resolve; }));
+      const limite = new Promise(resolve => setTimeout(resolve, 30000));
+      return Promise.race([Promise.all([...mapasProntos, ...fotos]), limite]);
+    }
+
+    async function salvarPdf() {
+      const btn = document.getElementById("btn-pdf");
+      const textoBotao = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparando...';
+      await aguardarConteudo();
+      btn.disabled = false;
+      btn.innerHTML = textoBotao;
+
+      const hoje = new Date().toISOString().slice(0, 10);
+      const valor = [...selecao][0];
+      const feat = SEDES.find(f => String(f.properties.num_sede) === valor);
+      const fazenda = feat ? (feat.properties.fazenda || "").normalize("NFD").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") : "";
+      const de = document.getElementById("filtro-de").value;
+      const ate = document.getElementById("filtro-ate").value;
+      const tituloOriginal = document.title;
+      // O navegador usa o título como nome sugerido do PDF
+      document.title = modoTodas || selecao.size > 1
+        ? `Relatorios_Sedes_${de || "inicio"}_a_${ate || hoje}`
+        : `Relatorio_Sede_${valor}_${fazenda}_${hoje}`;
+      window.print();
+      setTimeout(() => { document.title = tituloOriginal; }, 1000);
+    }
+
+    window.addEventListener("beforeprint", () => mapas.forEach(m => m.invalidateSize()));
+
+    montarSeletor();
+    gerarRelatorio();
+  </script>
+</body>
+</html>

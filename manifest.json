@@ -1,0 +1,37 @@
+{
+  "name": "BioMonitor - Monitoramento de Sedes",
+  "short_name": "BioMonitor",
+  "description": "BioMonitor - Sistema de Monitoramento e Rotina de Visitas as Sedes das Fazendas",
+  "start_url": "./index.html?app=biomonitor",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1b4332",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logos/icon-192.png?v=biomonitor",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logos/icon-maskable-192.png?v=biomonitor",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "logos/icon-512.png?v=biomonitor",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logos/icon-maskable-512.png?v=biomonitor",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

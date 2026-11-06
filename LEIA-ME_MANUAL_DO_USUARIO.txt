@@ -1,0 +1,152 @@
+================================================================================
+           BioMonitor - SISTEMA INTEGRADO DE MONITORAMENTO DE SEDES E VISTORIAS
+================================================================================
+
+Este projeto é uma aplicação georreferenciada completa (PWA) e plataforma de gestão
+de rotinas de vistorias técnicas das sedes rurais vizinhas às unidades monitoradas,
+focada no monitoramento, controle e prevenção de moscas-dos-estábulos.
+
+MANUAL WEB INTERATIVO (RECOMENDADO):
+👉 Abra no navegador o arquivo: manual.html
+👉 Ou online em: https://petersonsouza81-rgb.github.io/biomonitor/manual.html
+
+PAINEL RÁPIDO NO WINDOWS (1 CLIQUE):
+👉 Execute: MENU_MONITORAMENTO.bat
+
+
+================================================================================
+1. GUIA EXCLUSIVO DA EQUIPE DE CAMPO (AVALIADORES & VISTORIADORES)
+================================================================================
+
+Este guia foi desenvolvido especialmente para os profissionais que vão ao campo
+realizar as inspeções in loco nas sedes rurais.
+
+A. COMO ACESSAR E BAIXAR O APP NO CELULAR:
+   1. Abra o navegador do celular (Chrome no Android ou Safari no iPhone).
+   2. Acesse o endereço oficial:
+      https://petersonsouza81-rgb.github.io/biomonitor/
+   3. No Android: Toque no botão verde "Baixar App" ou no menu (3 pontinhos) e 
+      selecione "Instalar Aplicativo" ou "Adicionar à Tela Inicial".
+   4. No iPhone: Toque no botão Compartilhar (quadrado com seta para cima) e 
+      selecione "Adicionar à Tela de Início".
+   5. O BioMonitor funcionará como um aplicativo instalado no seu celular!
+
+B. ENTENDENDO AS CORES DAS SEDES NO MAPA:
+   🟢 VERDE (≤ 7 dias): Sede vistoriada recentemente. Rotina em dia.
+   🟡 AMARELO (8 a 15 dias): Sede próxima de vencer o prazo. Visitar em breve.
+   🔴 VERMELHO (≥ 16 dias ou Sem Visita): CRÍTICA! Prioridade máxima de rota.
+      Sempre comece o planejamento do seu dia pelas sedes VERMELHAS!
+
+C. COMO USAR O GPS NO CAMPO:
+   • Toque no botão de mira do GPS (canto superior direito do mapa).
+   • O mapa centrará na sua localização atual (ponto azul) e a barra superior
+     mostrará o nome da sede mais próxima e a distância em metros.
+
+D. PASSO A PASSO PARA PREENCHER O FORMULÁRIO KOBOTOOLBOX:
+   1. Ao chegar na sede, toque no pino correspondente no mapa e clique em
+      "Nova Vistoria (Kobo)" (já abre com o número da sede preenchido!).
+   2. Digite sua MATRÍCULA.
+   3. Confira DATA e HORA da vistoria.
+   4. Avalie o NÍVEL DE PRESSÃO DE MOSCA:
+      - BAIXA: 1 a 5 moscas por animal. Gado calmo, sem perturbação.
+      - MÉDIA: 6 a 20 moscas por animal. Animais batendo patas ou cauda.
+      - ALTA: Mais de 20 moscas por animal. Nuvens de insetos, animais aglomerados
+        em estresse severo. ALERTA IMEDIATO!
+   5. BANDEIRAS: Informe a quantidade de armadilhas/bandeiras contadas ou instaladas.
+   6. LARVA/PUPA: Marque se identificou larvas ou pupas em focos orgânicos.
+   7. INSETICIDA: Indique se houve aplicação de produto químico.
+   8. POSSÍVEIS CAUSADORES: Aponte a fonte atrativa (Vinhaça, Torta, Esterco, etc.).
+   9. PONTO GPS: Clique no botão de GPS do formulário para salvar suas coordenadas.
+      O sistema audita a distância exata em que você estava da sede!
+   10. OBSERVAÇÕES: Registre informações complementares e envie o formulário!
+
+E. TRABALHO OFFLINE (SEM SINAL DE CELULAR):
+   • Abra o BioMonitor enquanto tiver Wi-Fi ou sinal 4G antes de ir para o campo.
+   • No campo sem sinal, preencha normalmente. As vistorias ficam salvas no celular.
+   • Ao retornar para área com sinal, a sincronização com a nuvem é automática!
+   • Enquanto houver vistorias aguardando envio, aparece um botão laranja com
+     a quantidade no topo do app. Toque nele para tentar enviar na hora.
+   • NÃO desinstale o app nem limpe os dados do navegador com vistorias pendentes.
+
+
+================================================================================
+2. GUIA DA GESTÃO & RELATÓRIOS (COORDENAÇÃO & DIRETORIA)
+================================================================================
+
+A. RELATÓRIO ONLINE EXECUTIVO (relatorio.html):
+   Link: https://petersonsouza81-rgb.github.io/biomonitor/relatorio.html
+   • Indicadores Executivos em Tempo Real (KPIs de sedes visitadas e atrasadas).
+   • Gráficos dinâmicos com valores expressos dentro das roscas e nas legendas.
+   • Tabela completa das sedes ordenadas por criticidade, com link para traçar
+     rotas no Google Maps.
+   • Exportar Excel (.xlsx): Gera em 1 clique o relatório formatado com 2 abas.
+   • Imprimir / PDF: Impressão executiva A4 (Página 1: Dashboard; Página 2: Tabela).
+
+B. CALOR & RETORNO (aba do relatório executivo):
+   Link: https://petersonsouza81-rgb.github.io/biomonitor/relatorio.html#calor
+   • Raio físico de 300 metros em torno de cada sede.
+   • Comparação semanal com tela dividida (Split Screen).
+   • Mapa de calor por Pressão de Moscas ou Frequência de Vistorias.
+   • O intervalo médio de retorno às sedes fica no painel e na tabela do relatório.
+
+
+================================================================================
+3. ADMINISTRAÇÃO & TI (MANUTENÇÃO TÉCNICA E ARQUIVOS)
+================================================================================
+
+A. ESTRUTURA ORGANIZADA DE DIRETÓRIOS:
+   📁 01_BioMonitor/
+   ├── 🖼️ logos/                      (Logos BioMonitor e ícones PWA para celular)
+   ├── 🗺️ banco de dados geograficos/ (Sede.shp e BioMonitor.qgz)
+   ├── 📊 relatorios e formularios/  (Visitas_Monitoramento_Sedes_Kobo.xlsx)
+   ├── ⚙️ scripts/                    (atualizar_base_web.py e biomonitor_core.py)
+   ├── 🌐 index.html                  (App de Campo mobile/desktop)
+   ├── 📊 relatorio.html              (Relatório Executivo Online com Excel e PDF)
+   ├── 📈 analise_frequencia.html     (Mapa da aba Calor & Retorno do relatório)
+   ├── 📖 manual.html                 (Manual Oficial Interativo Web)
+   ├── ⚙️ MENU_MONITORAMENTO.bat      (Central de Operações em 1 clique)
+   └── 📄 LEIA-ME_MANUAL_DO_USUARIO.txt (Este arquivo)
+
+B. MENU DE OPERAÇÕES NO WINDOWS (MENU_MONITORAMENTO.bat):
+   [1] Atualizar tudo e publicar (Kobo, fotos, mapa, Excel e app do celular)
+   [2] Abrir Relatórios (executivo com Calor & Retorno e por sede - salvar PDF)
+   [3] Abrir Mapa de Campo
+   [4] Abrir Manuais (gestão e guia da equipe de campo)
+   [5] Abrir KoboToolbox (dados na nuvem)
+   [6] Abrir Projeto no QGIS (BioMonitor.qgz)
+   [7] Instalar/atualizar bibliotecas Python (primeiro uso)
+   [0] Sair
+
+   Sem acesso a este computador: nos relatórios online, o botão
+   "Atualizar dados" faz o mesmo que a opção [1] direto no GitHub.
+
+Primeiro uso em outro computador: dê duplo clique em PRIMEIRO_ACESSO.bat, nesta
+   pasta. Ele libera o Git só para esta pasta; depois, use o menu normalmente.
+   Quem só usa os relatórios online não precisa disso.
+
+C. MIGRAÇÃO PARA OUTRO COMPUTADOR:
+   1. Copie a pasta '01_BioMonitor' ou clone pelo GitHub:
+      git clone https://github.com/petersonsouza81-rgb/biomonitor.git
+   2. Instale as bibliotecas Python pelo menu, opção [7]
+      (ou: pip install -r requirements.txt).
+   3. Configure o token do KoboToolbox: copie scripts\.env.example para
+      scripts\.env e cole o token (KoboToolbox > Account Settings > Security).
+      O arquivo .env NÃO vai para o GitHub.
+   4. Pronto! Abra pelo MENU_MONITORAMENTO.bat.
+
+D. CONFIGURAÇÕES (scripts\biomonitor_config.json):
+   • monitoramento: data de início; vistorias anteriores são ignoradas.
+   • status: dias limite para Verde e Amarelo (vale para mapa, relatório e análise).
+   • validacao: distância máxima (m) entre o GPS da vistoria e a sede, e formato
+     da matrícula. Vistorias fora da regra aparecem na coluna ALERTAS_VALIDACAO
+     do Excel e com ⚠️ no relatório.
+   • privacidade: mascarar matrícula e publicar ou não o GPS do avaliador no site.
+   Depois de alterar, rode a opção [1] do menu para publicar.
+
+E. ONDE FICAM OS DADOS:
+   • Site (GitHub): dados_mapa.js e vistorias_kobo.json, com matrícula mascarada.
+   • Só neste computador: Excel consolidado completo e dados_locais\ (cache).
+
+================================================================================
+BioMonitor • 2026
+================================================================================

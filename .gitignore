@@ -1,0 +1,23 @@
+# Pasta com arquivos obsoletos / nao utilizados
+excluir/
+exluir/
+~$*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+
+# Segredos e dados pessoais (ficam so neste computador)
+.env
+scripts/.env
+dados_locais/
+relatorios e formularios/Visitas_Monitoramento_Sedes_Kobo.xlsx
+
+# Arquivos criados pelo Windows na rede
+Thumbs.db
+desktop.ini
+banco de dados geograficos/Base_leonel*

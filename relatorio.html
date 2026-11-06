@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BioMonitor | Relatório Online de Vistorias</title>
+
+  <!-- PWA & Favicon -->
+  <link rel="manifest" href="manifest.json?v=biomonitor">
+  <link rel="apple-touch-icon" href="logos/apple-touch-icon.png?v=biomonitor">
+  <link rel="icon" type="image/png" sizes="192x192" href="logos/icon-192.png?v=biomonitor">
+  <link rel="icon" type="image/png" sizes="512x512" href="logos/icon-512.png?v=biomonitor">
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=biomonitor">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-title" content="BioMonitor Relatório">
+
+  <!-- Fontes & Ícones -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js para Gráficos Executivos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- SheetJS para Exportação Direta em Excel (.xlsx) no Celular/PC -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #273549;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #15803d;
+      --primary-light: #22c55e;
+      --primary-dark: #166534;
+      --status-verde: #22c55e;
+      --status-amarelo: #f59e0b;
+      --status-vermelho: #ef4444;
+      --status-baixa: #38bdf8;
+      --status-media: #f97316;
+      --status-alta: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TELA DE CARREGAMENTO INICIAL */
+    #app-loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease-out, visibility 0.4s;
+    }
+
+    .loading-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 30px 24px;
+      max-width: 320px;
+      width: 90%;
+    }
+
+    .loading-logo-box {
+      width: 86px;
+      height: 86px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(34, 197, 94, 0.25);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      margin-bottom: 18px;
+      background: #0f172a;
+      animation: pulseLogo 2s ease-in-out infinite;
+    }
+
+    .loading-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    @keyframes pulseLogo {
+      0%, 100% { transform: scale(1); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.2); }
+      50% { transform: scale(1.05); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), 0 0 30px rgba(34, 197, 94, 0.45); }
+    }
+
+    .loading-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: 0.3px;
+      margin-bottom: 14px;
+    }
+
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3.5px solid rgba(34, 197, 94, 0.2);
+      border-top-color: #22c55e;
+      border-radius: 50%;
+      animation: spinLoader 0.75s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spinLoader {
+      to { transform: rotate(360deg); }
+    }
+
+    /* HEADER EXECUTIVO */
+    header {
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 6px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      border: 1.5px solid rgba(255,255,255,0.18);
+      background: #0f172a;
+    }
+
+    .brand-text h1 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .brand-text span {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 1px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+
+    .btn-action {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--bg-card-hover);
+      border-color: #475569;
+      transform: translateY(-1px);
+    }
+
+    .btn-action.btn-excel {
+      background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+      border-color: #22c55e;
+      color: #fff;
+    }
+
+    .btn-action.btn-excel:hover {
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+    }
+
+    /* CONTAINER PRINCIPAL */
+    .container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      flex: 1;
+    }
+
+    /* CARDS DE KPIS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      border-color: #475569;
+    }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+    }
+
+    .kpi-card.total::before { background: #38bdf8; }
+    .kpi-card.sedes::before { background: #818cf8; }
+    .kpi-card.verde::before { background: var(--status-verde); }
+    .kpi-card.amarelo::before { background: var(--status-amarelo); }
+    .kpi-card.vermelho::before { background: var(--status-vermelho); }
+    .kpi-card.alta::before { background: #f43f5e; }
+
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* SEÇÃO DE GRÁFICOS */
+    .charts-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .chart-box-semanal {
+      width: 100%;
+    }
+
+    .charts-donuts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .charts-donuts-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .chart-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 220px;
+    }
+
+    /* BARRA DE FILTROS E BUSCA */
+    .filter-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 9px 12px 9px 36px;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary-light);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .select-filter {
+      background: #0f172a;
+      color: #fff;
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* ABAS DE NAVEGAÇÃO DO RELATÓRIO */
+    .tabs-header {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 16px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    /* Abas principais: Painel | Calor & Retorno (dentro do cabeçalho) */
+    .view-tabs {
+      margin-bottom: 0;
+      border-bottom: none;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    #frame-calor {
+      display: block;
+      width: 100%;
+      border: 0;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        position: static;
+      }
+      .view-tabs {
+        order: 3;
+        flex: 1 1 100%;
+      }
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      transition: color 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+    }
+
+    .tab-btn.active {
+      color: var(--primary-light);
+    }
+
+    .tab-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--primary-light);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .view-tabs .tab-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    .view-tabs .tab-btn.active {
+      background: rgba(34, 197, 94, 0.14);
+    }
+
+    .view-tabs .tab-btn.active::after {
+      display: none;
+    }
+
+    /* Notebooks: mantém cabeçalho, abas e botões em uma só linha */
+    @media (max-width: 1500px) {
+      header {
+        padding: 6px 10px;
+        column-gap: 8px;
+      }
+      .brand-text h1 {
+        font-size: 13px;
+      }
+      .header-actions {
+        gap: 4px;
+      }
+      .btn-action,
+      .view-tabs .tab-btn {
+        padding: 5px 7px;
+        font-size: 11px;
+        gap: 4px;
+      }
+    }
+
+    .tab-badge {
+      background: #334155;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+
+    /* TABELA DE DADOS */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    th {
+      background: #0f172a;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      vertical-align: middle;
+      color: #e2e8f0;
+    }
+
+    tr:hover td {
+      background: rgba(30, 41, 59, 0.7);
+    }
+
+    /* BADGES DE STATUS */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-verde { background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.35); }
+    .badge-amarelo { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .badge-vermelho { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
+    .badge-baixa { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+    .badge-media { background: rgba(249, 115, 22, 0.18); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35); }
+    .badge-alta { background: rgba(239, 68, 68, 0.22); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 800; }
+    .badge-sem { background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
+
+    .link-maps {
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      transition: all 0.2s;
+    }
+
+    .link-maps:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+    }
+
+    .table-footer {
+      padding: 12px 16px;
+      background: #0f172a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* IMPRESSÃO (PDF / PRINT) */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm 8mm 8mm 8mm;
+      }
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+      header, .filter-panel, .btn-action, .tabs-header, #app-loading-screen, #banner-online, #view-calor {
+        display: none !important;
+      }
+      .container {
+        padding: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+
+      /* CABEÇALHO DA PÁGINA 1 */
+      .print-header {
+        display: block !important;
+        margin-bottom: 8px !important;
+        border-bottom: 2px solid #0f172a !important;
+        padding-bottom: 4px !important;
+      }
+      .print-header h2 {
+        font-size: 16px !important;
+        color: #000 !important;
+        margin: 0 !important;
+      }
+      .print-header p {
+        font-size: 10px !important;
+        color: #475569 !important;
+        margin: 2px 0 !important;
+      }
+
+      /* CARDS DE KPIS EM UMA LINHA COMPACTA NA PÁGINA 1 */
+      .kpi-grid {
+        display: grid !important;
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .kpi-card {
+        background: #fff !important;
+        color: #000 !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 6px !important;
+        box-shadow: none !important;
+        padding: 6px 8px !important;
+      }
+      .kpi-header {
+        font-size: 8px !important;
+        color: #475569 !important;
+        letter-spacing: 0px !important;
+      }
+      .kpi-value {
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        color: #000 !important;
+      }
+      .kpi-sub {
+        font-size: 7.5px !important;
+        color: #64748b !important;
+      }
+
+      /* SEÇÃO DE GRÁFICOS: BLOCOS SEPARADOS NO DOM - IMPOSSÍVEL SOBREPOR */
+      .charts-section {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 0 12px 0 !important;
+        padding: 0 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .chart-box {
+        background: #fff !important;
+        color: #000 !important;
+        border: 1px solid #d1d5db !important; /* Linhas de contorno finas */
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
+        box-shadow: none !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        box-sizing: border-box !important;
+      }
+      .chart-box-semanal {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 12px !important; /* Espaço obrigatório físico entre as barras e as roscas */
+      }
+      .chart-box-semanal .chart-wrapper {
+        height: 155px !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        position: relative !important;
+      }
+      .charts-donuts-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .chart-box-donut {
+        flex: 0 0 calc(50% - 6px) !important;
+        width: calc(50% - 6px) !important;
+        max-width: calc(50% - 6px) !important;
+      }
+      .chart-box-donut .chart-wrapper {
+        height: 165px !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        position: relative !important;
+      }
+      .chart-title {
+        color: #000 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        margin-bottom: 4px !important;
+      }
+      .chart-wrapper canvas {
+        display: block !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+      }
+
+      /* TABELA: FORÇADA A COMEÇAR NA SEGUNDA PÁGINA EM DIANTE */
+      .table-container {
+        page-break-before: always !important; /* Inicia obrigatoriamente na página 2 */
+        break-before: page !important;
+        margin-top: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        border: 1px solid #d1d5db !important;
+        box-shadow: none !important;
+        border-radius: 6px !important;
+        padding: 0 !important;
+      }
+      .table-responsive {
+        overflow: visible !important;
+        width: 100% !important;
+      }
+      table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        color: #000 !important;
+      }
+      thead {
+        display: table-header-group !important;
+      }
+      tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      th {
+        background: #f1f5f9 !important;
+        color: #000 !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 6px 3px !important;
+        font-size: 8px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+      td {
+        border: 1px solid #e2e8f0 !important;
+        color: #000 !important;
+        padding: 5px 3px !important;
+        font-size: 8.5px !important;
+        vertical-align: middle !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+      td * {
+        color: inherit !important;
+      }
+
+      /* LARGURAS EXATAS DAS 11 COLUNAS VISÍVEIS (ATÉ RETORNO MÉDIO) */
+      #tab-content-sedes th:nth-child(1), #tab-content-sedes td:nth-child(1) { width: 5%; text-align: center !important; font-weight: 800 !important; } /* Nº Sede */
+      #tab-content-sedes th:nth-child(2), #tab-content-sedes td:nth-child(2) { width: 17%; text-align: left !important; }                               /* Nome / Fazenda */
+      #tab-content-sedes th:nth-child(3), #tab-content-sedes td:nth-child(3) { width: 10%; text-align: left !important; }                               /* Região */
+      #tab-content-sedes th:nth-child(4), #tab-content-sedes td:nth-child(4) { width: 11%; text-align: left !important; }                               /* Proprietário */
+      #tab-content-sedes th:nth-child(5), #tab-content-sedes td:nth-child(5) { width: 9%; text-align: center !important; }                              /* Última Visita */
+      #tab-content-sedes th:nth-child(6), #tab-content-sedes td:nth-child(6) { width: 8%; text-align: center !important; }                              /* Dias sem Visita */
+      #tab-content-sedes th:nth-child(7), #tab-content-sedes td:nth-child(7) { width: 10%; text-align: center !important; }                             /* Status Atual */
+      #tab-content-sedes th:nth-child(8), #tab-content-sedes td:nth-child(8) { width: 8%; text-align: center !important; }                              /* Pressão de Mosca */
+      #tab-content-sedes th:nth-child(9), #tab-content-sedes td:nth-child(9) { width: 8%; text-align: center !important; }                              /* Bandeiras */
+      #tab-content-sedes th:nth-child(10), #tab-content-sedes td:nth-child(10) { width: 7%; text-align: center !important; font-weight: 800 !important; } /* Total Visitas */
+
+      #tab-content-sedes th:nth-child(11), #tab-content-sedes td:nth-child(11) { width: 7%; text-align: center !important; }
+
+      /* OCULTAR COLUNA DE LOCALIZAÇÃO (MAPS) NA IMPRESSÃO */
+      #tab-content-sedes th:nth-child(12),
+      #tab-content-sedes td:nth-child(12),
+      #tab-content-historico th:nth-child(12),
+      #tab-content-historico td:nth-child(12) {
+        display: none !important;
+      }
+
+      /* BADGES DE STATUS FORMATADAS PARA IMPRESSÃO EM PAPEL */
+      .badge {
+        display: inline-block !important;
+        padding: 2px 4px !important;
+        font-size: 7.5px !important;
+        font-weight: 700 !important;
+        border-radius: 4px !important;
+      }
+      .badge-verde { background: #dcfce7 !important; color: #15803d !important; border: 1px solid #86efac !important; }
+      .badge-amarelo { background: #fef3c7 !important; color: #b45309 !important; border: 1px solid #fde68a !important; }
+      .badge-vermelho { background: #fee2e2 !important; color: #b91c1c !important; border: 1px solid #fca5a5 !important; }
+      .badge-baixa { background: #e0f2fe !important; color: #0369a1 !important; border: 1px solid #bae6fd !important; }
+      .badge-media { background: #ffedd5 !important; color: #c2410c !important; border: 1px solid #fed7aa !important; }
+      .badge-alta { background: #fee2e2 !important; color: #b91c1c !important; border: 1px solid #fca5a5 !important; }
+      .badge-sem { background: #f8fafc !important; color: #64748b !important; border: 1px solid #cbd5e1 !important; }
+
+      #tab-content-sedes td:nth-child(10) span {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 2px 6px !important;
+      }
+
+      .table-footer {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border-top: 1px solid #cbd5e1 !important;
+        padding: 6px 8px !important;
+        font-size: 8px !important;
+      }
+    }
+
+    .print-header {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TELA DE CARREGAMENTO INICIAL COM LOGO E ANIMAÇÃO -->
+  <div id="app-loading-screen">
+    <div class="loading-card">
+      <div class="loading-logo-box">
+        <img src="logos/BioMonitor_512.jpg" alt="BioMonitor Logo" onerror="this.onerror=null; this.src='logos/icon-192.png';">
+      </div>
+      <div class="loading-title">BioMonitor | Relatório Executivo</div>
+      <div class="loading-spinner"></div>
+      <div style="font-size:12px; color:#94a3b8; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-arrows-rotate fa-spin" style="color:#22c55e;"></i>
+        <span>Carregando dados das sedes...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CABEÇALHO SUPERIOR -->
+  <header>
+    <div class="brand-section">
+      <img src="logos/BioMonitor_512.jpg" alt="BioMonitor Logo" class="brand-logo" onerror="this.src='logos/icon-192.png'">
+      <div class="brand-text">
+        <h1><i class="fa-solid fa-file-invoice" style="color:var(--primary-light);"></i> BioMonitor | Relatório Online de Vistorias</h1>
+        <span id="data-atualizacao-topo">Carregando dados consolidados...</span>
+      </div>
+    </div>
+
+    <!-- ABAS PRINCIPAIS -->
+    <div class="tabs-header view-tabs">
+      <button class="tab-btn active" id="view-btn-painel" onclick="alternarVisao('painel')">
+        <i class="fa-solid fa-table-columns"></i> Painel
+      </button>
+      <button class="tab-btn" id="view-btn-calor" onclick="alternarVisao('calor')">
+        <i class="fa-solid fa-fire"></i> Calor &amp; Retorno
+      </button>
+    </div>
+
+    <div class="header-actions">
+      <!-- Buscar vistorias e fotos novas no Kobo (GitHub Actions) -->
+      <button class="btn-action" onclick="BioMonitorAtualizacao.abrir()" title="Buscar vistorias e fotos novas no KoboToolbox">
+        <i class="fa-solid fa-cloud-arrow-down"></i> Atualizar dados
+      </button>
+
+      <!-- Relatório individual da sede com fotos, pronto para PDF -->
+      <a class="btn-action" href="relatorio_sede.html" title="Relatório de uma sede com tratativas e fotos">
+        <i class="fa-solid fa-file-lines"></i> Relatório por Sede
+      </a>
+
+      <!-- Botão Compartilhar Link para Celular / WhatsApp -->
+      <button class="btn-action" onclick="compartilharRelatorio()" style="background:#0284c7; color:#fff; border-color:#38bdf8;" title="Copiar link ou compartilhar no WhatsApp para ver no celular">
+        <i class="fa-solid fa-share-nodes"></i> Compartilhar Link
+      </button>
+
+      <!-- Botão Exportar Excel Direto -->
+      <button class="btn-action btn-excel" onclick="exportarExcelCompleto()" title="Baixar relatório completo formatado em Excel (.xlsx)">
+        <i class="fa-solid fa-file-excel"></i> Exportar Excel
+      </button>
+
+      <!-- Botão Imprimir / PDF -->
+      <button class="btn-action" onclick="prepararEImprimir()" title="Imprimir ou Salvar em PDF">
+        <i class="fa-solid fa-print"></i> Imprimir / PDF
+      </button>
+
+      <!-- Ir para o Mapa BioMonitor -->
+      <a href="index.html" class="btn-action" title="Abrir o Mapa de Campo BioMonitor">
+        <i class="fa-solid fa-map-location-dot"></i> Mapa de Campo
+      </a>
+
+      <!-- Abrir Manual do Usuário e Guia de Campo -->
+      <a href="manual.html" class="btn-action" title="Abrir Manual de Uso e Guia de Campo">
+        <i class="fa-solid fa-book-open"></i> Manual
+      </a>
+    </div>
+  </header>
+
+  <!-- ABA CALOR & RETORNO: mapa semanal, carregado só ao abrir a aba -->
+  <div id="view-calor" style="display:none;">
+    <iframe id="frame-calor" title="Mapa de calor e frequência de retorno"></iframe>
+  </div>
+
+  <div class="container" id="view-painel">
+
+    <!-- CABEÇALHO EXCLUSIVO PARA IMPRESSÃO EM PDF -->
+    <div class="print-header">
+      <h2 style="font-size:20px; font-weight:800;">BioMonitor - Relatório Executivo de Monitoramento de Sedes</h2>
+      <p style="font-size:12px; color:#555;">Gestão e Rotinas de Controle de Moscas-dos-Estábulos</p>
+      <p style="font-size:11px; color:#777; margin-top:4px;" id="print-date"></p>
+    </div>
+
+    <!-- CARDS DE KPIS EXECUTIVOS -->
+    <div class="kpi-grid">
+      <div class="kpi-card total">
+        <div class="kpi-header">
+          <span>Total de Vistorias</span>
+          <i class="fa-solid fa-clipboard-check" style="color:#38bdf8;"></i>
+        </div>
+        <div class="kpi-value" id="kpi-total-vistorias">0</div>
+        <div class="kpi-sub">Registros coletados no campo</div>
+      </div>
+
+      <div class="kpi-card sedes">
+        <div class="kpi-header">
+          <span>Sedes Vistoriadas</span>
+          <i class="fa-solid fa-house-chimney" style="color:#818cf8;"></i>
+        </div>
+        <div class="kpi-value" id="kpi-sedes-visitadas">-</div>
+        <div class="kpi-sub" id="kpi-sedes-percent">0% de cobertura</div>
+      </div>
+
+      <div class="kpi-card verde">
+        <div class="kpi-header">
+          <span data-lim-text="Em Dia (≤ {V} dias)">Em Dia (≤ 7 dias)</span>
+          <i class="fa-solid fa-circle-check" style="color:var(--status-verde);"></i>
+        </div>
+        <div class="kpi-value" id="kpi-em-dia" style="color:var(--status-verde);">0</div>
+        <div class="kpi-sub">Rotina de visita regular</div>
+      </div>
+
+      <div class="kpi-card amarelo">
+        <div class="kpi-header">
+          <span data-lim-text="Atenção ({A1} a {A} dias)">Atenção (8 a 15 dias)</span>
+          <i class="fa-solid fa-triangle-exclamation" style="color:var(--status-amarelo);"></i>
+        </div>
+        <div class="kpi-value" id="kpi-atencao" style="color:var(--status-amarelo);">0</div>
+        <div class="kpi-sub">Próximas do vencimento</div>
+      </div>
+
+      <div class="kpi-card vermelho">
+        <div class="kpi-header">
+          <span data-lim-text="Atrasadas (≥ {R} dias)">Atrasadas (≥ 16 dias)</span>
+          <i class="fa-solid fa-circle-xmark" style="color:var(--status-vermelho);"></i>
+        </div>
+        <div class="kpi-value" id="kpi-atrasadas" style="color:var(--status-vermelho);">0</div>
+        <div class="kpi-sub">Sem visita ou prazo expirado</div>
+      </div>
+
+      <div class="kpi-card alta">
+        <div class="kpi-header">
+          <span>Pressão Alta de Mosca</span>
+          <i class="fa-solid fa-fire" style="color:#f43f5e;"></i>
+        </div>
+        <div class="kpi-value" id="kpi-pressao-alta" style="color:#f43f5e;">0</div>
+        <div class="kpi-sub">Sedes em alerta máximo</div>
+      </div>
+
+      <div class="kpi-card total">
+        <div class="kpi-header">
+          <span>Retorno Médio</span>
+          <i class="fa-solid fa-repeat" style="color:#38bdf8;"></i>
+        </div>
+        <div class="kpi-value" id="kpi-retorno-medio">-</div>
+        <div class="kpi-sub">Intervalo entre vistorias da mesma sede</div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO DE GRÁFICOS EXECUTIVOS -->
+    <div class="charts-section">
+      <!-- 1. Evolução Semanal de Vistorias (Largura Total Superior) -->
+      <div class="chart-box chart-box-semanal">
+        <div class="chart-title">
+          <i class="fa-solid fa-chart-column" style="color:#38bdf8;"></i> Evolução Semanal de Vistorias e Pressão
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="chart-semanal"></canvas>
+        </div>
+      </div>
+
+      <!-- 2. Linha com os Dois Gráficos de Rosca Lado a Lado -->
+      <div class="charts-donuts-row">
+        <div class="chart-box chart-box-donut">
+          <div class="chart-title">
+            <i class="fa-solid fa-chart-pie" style="color:#22c55e;"></i> Cobertura das Sedes
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chart-status"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-box chart-box-donut">
+          <div class="chart-title">
+            <i class="fa-solid fa-virus" style="color:#f97316;"></i> Nível de Infestação
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chart-pressao"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAINEL DE FILTROS E BUSCA -->
+    <div class="filter-panel">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="filtro-busca" class="search-input" placeholder="Buscar por número da sede, fazenda, proprietário ou avaliador..." oninput="aplicarFiltros()">
+      </div>
+
+      <div class="filter-group">
+        <select id="filtro-status" class="select-filter" onchange="aplicarFiltros()">
+          <option value="todos">Status: Todos</option>
+          <option value="verde" data-lim-text="🟢 Em Dia (≤ {V} dias)">🟢 Em Dia (≤ 7 dias)</option>
+          <option value="amarelo" data-lim-text="🟡 Atenção ({A1} a {A} dias)">🟡 Atenção (8 a 15 dias)</option>
+          <option value="vermelho" data-lim-text="🔴 Atrasadas / Sem Visita (≥ {R} dias)">🔴 Atrasadas / Sem Visita (≥ 16 dias)</option>
+        </select>
+
+        <select id="filtro-pressao" class="select-filter" onchange="aplicarFiltros()">
+          <option value="todas">Pressão: Todas</option>
+          <option value="Alta">🔴 Alta</option>
+          <option value="Média">🟠 Média</option>
+          <option value="Baixa">🔵 Baixa</option>
+        </select>
+
+        <select id="filtro-regiao" class="select-filter" onchange="aplicarFiltros()">
+          <option value="todas">Região: Todas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- NAVEGAÇÃO ENTRE AS DUAS ABAS DO RELATÓRIO -->
+    <div class="tabs-header">
+      <button class="tab-btn active" id="tab-btn-sedes" onclick="alternarAba('sedes')">
+        <i class="fa-solid fa-house-chimney-user"></i> Status das Sedes
+        <span class="tab-badge" id="badge-count-sedes">-</span>
+      </button>
+
+      <button class="tab-btn" id="tab-btn-historico" onclick="alternarAba('historico')">
+        <i class="fa-solid fa-list-check"></i> Histórico Completo de Vistorias
+        <span class="tab-badge" id="badge-count-historico">0</span>
+      </button>
+    </div>
+
+    <!-- CONTEÚDO DA ABA 1: STATUS DAS SEDES -->
+    <div id="tab-content-sedes" class="table-container">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Nº Sede</th>
+              <th>Nome / Fazenda</th>
+              <th>Região</th>
+              <th>Proprietário</th>
+              <th>Última Visita</th>
+              <th>Dias</th>
+              <th>Status</th>
+              <th>Pressão</th>
+              <th>Bandeiras</th>
+              <th>Visitas</th>
+              <th>Retorno</th>
+              <th>Mapa</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-sedes">
+            <tr>
+              <td colspan="12" style="text-align:center; padding:30px; color:var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin"></i> Carregando dados das sedes...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="footer-sedes-info">Exibindo 0 sedes</span>
+        <span>BioMonitor - Monitoramento de Sedes</span>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO DA ABA 2: HISTÓRICO COMPLETO -->
+    <div id="tab-content-historico" class="table-container" style="display:none;">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Data & Hora</th>
+              <th>Nº Sede</th>
+              <th>Fazenda</th>
+              <th>Avaliador</th>
+              <th>Pressão</th>
+              <th>Bandeiras</th>
+              <th>Larva/Pupa</th>
+              <th>Inseticida</th>
+              <th>Causadores</th>
+              <th>Distância Sede</th>
+              <th>Observações</th>
+              <th>GPS Lançamento</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-historico">
+            <tr>
+              <td colspan="12" style="text-align:center; padding:30px; color:var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin"></i> Carregando histórico de vistorias...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="footer-historico-info">Exibindo 0 vistorias</span>
+        <span>Histórico Oficial KoboToolbox</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SCRIPT DE DADOS E LÓGICA -->
+  <script src="dados_mapa.js"></script>
+  <script src="atualizar_dados.js"></script>
+  <script>
+    // Limites de status (dias) vindos de scripts/biomonitor_config.json via dados_mapa.js
+    const LIM_VERDE = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.verde_max_dias) || 7;
+    const LIM_AMARELO = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.amarelo_max_dias) || 15;
+    function aplicarTextosLimites() {
+      const fmt = s => s.replace(/\{V\}/g, LIM_VERDE).replace(/\{A1\}/g, LIM_VERDE + 1)
+                        .replace(/\{A\}/g, LIM_AMARELO).replace(/\{R\}/g, LIM_AMARELO + 1);
+      document.querySelectorAll("[data-lim-text]").forEach(el => { el.textContent = fmt(el.getAttribute("data-lim-text")); });
+      document.querySelectorAll("[data-lim-title]").forEach(el => { el.title = fmt(el.getAttribute("data-lim-title")); });
+    }
+    document.addEventListener("DOMContentLoaded", aplicarTextosLimites);
+  </script>
+  <script>
+    let listaSedesGeral = [];
+    let listaHistoricoGeral = [];
+    let abaAtiva = "sedes";
+    const URL_RELATORIO = new URL("relatorio.html", location.href).href;
+
+    // Sem animação: o PDF nunca pega um gráfico pela metade
+    Chart.defaults.animation = false;
+
+    let chartSemanal = null;
+    let chartStatus = null;
+    let chartPressao = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      carregarDadosRelatorio();
+      if (location.hash === "#calor") alternarVisao("calor");
+      setTimeout(ocultarLoadingInicial, 700);
+    });
+
+    window.addEventListener("load", () => {
+      setTimeout(ocultarLoadingInicial, 500);
+    });
+
+    function ocultarLoadingInicial() {
+      const ls = document.getElementById("app-loading-screen");
+      if (ls) {
+        ls.style.opacity = "0";
+        ls.style.pointerEvents = "none";
+        setTimeout(() => { if (ls.parentNode) ls.remove(); }, 400);
+      }
+    }
+    setTimeout(ocultarLoadingInicial, 2500);
+
+    // =========================================================================
+    // CARREGAR DADOS CONSOLIDADOS
+    // =========================================================================
+    async function carregarDadosRelatorio() {
+      // 1. Carregar Vistorias
+      let vistorias = [];
+      try {
+        // Tentar buscar json mais atualizado
+        const r = await fetch("vistorias_kobo.json?_t=" + Date.now());
+        if (r.ok) {
+          vistorias = await r.json();
+        }
+      } catch (e) {}
+
+      if (!vistorias.length && typeof DADOS_VISTORIAS_KOBO !== "undefined" && Array.isArray(DADOS_VISTORIAS_KOBO)) {
+        vistorias = DADOS_VISTORIAS_KOBO;
+      }
+
+      // Mesclar visitas locais de contingência
+      try {
+        const local = JSON.parse(localStorage.getItem("visitas_historico") || "[]").filter(visitaNoPeriodo);
+        local.forEach(lv => {
+          const jaExiste = vistorias.some(tv => 
+            String(tv.num_sede) === String(lv.num_sede) &&
+            (tv.data_vistoria || tv.data) === (lv.data_vistoria || lv.data) &&
+            (tv.hora_vistoria || tv.hora) === (lv.hora_vistoria || lv.hora)
+          );
+          if (!jaExiste) vistorias.push(lv);
+        });
+      } catch (e) {}
+
+      listaHistoricoGeral = vistorias.slice().sort((a, b) => {
+        const da = parseDataBR(a.data_vistoria || a.data);
+        const db = parseDataBR(b.data_vistoria || b.data);
+        return db - da;
+      });
+
+      // 2. Mapear as Sedes
+      const sedesMap = new Map();
+      if (typeof DADOS_SEDES !== "undefined" && DADOS_SEDES.features) {
+        DADOS_SEDES.features.forEach(f => {
+          const p = f.properties || {};
+          const [lon, lat] = f.geometry ? f.geometry.coordinates : [0, 0];
+          const n = String(p.num_sede || "").trim();
+          sedesMap.set(n, {
+            num_sede: n,
+            nome_sede: p.nome_sede || `Sede ${n}`,
+            fa: p.fa || "SEM FA",
+            fazenda: p.fazenda || p.nome_sede || "-",
+            proprietario: p.proprietario || "-",
+            regiao: p.regiao || "Região",
+            lat: lat,
+            lon: lon,
+            vistorias: []
+          });
+        });
+      }
+
+      // Agrupar vistorias nas sedes
+      listaHistoricoGeral.forEach(v => {
+        const sId = String(v.num_sede || "").trim();
+        if (sedesMap.has(sId)) {
+          sedesMap.get(sId).vistorias.push(v);
+        }
+      });
+
+      // Calcular status de cada sede
+      const hoje = new Date();
+      listaSedesGeral = Array.from(sedesMap.values()).map(sede => {
+        sede.vistorias.sort((a, b) => parseDataBR(b.data_vistoria || b.data) - parseDataBR(a.data_vistoria || a.data));
+        const totalV = sede.vistorias.length;
+        const ult = totalV > 0 ? sede.vistorias[0] : null;
+
+        // Intervalos em dias entre vistorias sucessivas da sede
+        const intervalos = [];
+        for (let i = 1; i < totalV; i++) {
+          const dias = Math.round((parseDataBR(sede.vistorias[i - 1].data_vistoria || sede.vistorias[i - 1].data) -
+                                   parseDataBR(sede.vistorias[i].data_vistoria || sede.vistorias[i].data)) / 86400000);
+          if (dias > 0) intervalos.push(dias);
+        }
+
+        let dias = 999;
+        let dataUltima = "-";
+        let status = "vermelho";
+        let statusTexto = "Sem Visita";
+        let pressao = "-";
+        let bandeiras = "-";
+
+        if (ult) {
+          dataUltima = ult.data_vistoria || ult.data || "-";
+          const dt = parseDataBR(dataUltima);
+          if (dt) {
+            dias = Math.floor((hoje - dt) / (1000 * 60 * 60 * 24));
+            if (dias < 0) dias = 0;
+          }
+          pressao = ult.pressao || "Média";
+          bandeiras = ult.bandeiras || "0";
+
+          if (dias <= LIM_VERDE) {
+            status = "verde";
+            statusTexto = "Em Dia";
+          } else if (dias <= LIM_AMARELO) {
+            status = "amarelo";
+            statusTexto = "Atenção";
+          } else {
+            status = "vermelho";
+            statusTexto = "Atrasada";
+          }
+        }
+
+        return {
+          ...sede,
+          total_vistorias: totalV,
+          ultima_data: dataUltima,
+          dias_sem_visita: dias,
+          status: status,
+          status_texto: statusTexto,
+          ultima_pressao: pressao,
+          ultimas_bandeiras: bandeiras,
+          ultima_vistoria_obj: ult,
+          intervalos: intervalos,
+          retorno_medio: intervalos.length ? intervalos.reduce((a, b) => a + b, 0) / intervalos.length : null
+        };
+      });
+
+      // Ordenar sedes: Mais críticas primeiro (Atrasadas -> Atenção -> Em Dia)
+      listaSedesGeral.sort((a, b) => {
+        if (b.dias_sem_visita !== a.dias_sem_visita) {
+          return b.dias_sem_visita - a.dias_sem_visita;
+        }
+        return parseInt(a.num_sede || 0) - parseInt(b.num_sede || 0);
+      });
+
+      // Atualizar interface
+      popularFiltroRegiao();
+      atualizarKpis();
+      atualizarGraficos();
+      aplicarFiltros();
+
+      // Topo data e hora
+      const dNow = new Date();
+      const txtData = `Última atualização: ${dNow.toLocaleDateString("pt-BR")} às ${dNow.toLocaleTimeString("pt-BR")}`;
+      document.getElementById("data-atualizacao-topo").innerText = txtData;
+      const pDate = document.getElementById("print-date");
+      if (pDate) pDate.innerText = `Relatório gerado em: ${dNow.toLocaleDateString("pt-BR")} às ${dNow.toLocaleTimeString("pt-BR")}`;
+    }
+
+    function parseDataBR(s) {
+      if (!s) return null;
+      const p = String(s).trim().split("/");
+      if (p.length === 3) {
+        return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      }
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    function formatarDias(n) {
+      return n.toFixed(1).replace(".", ",");
+    }
+
+    // =========================================================================
+    // ATUALIZAÇÃO DOS CARDS DE KPIS
+    // =========================================================================
+    function atualizarKpis() {
+      const totalV = listaHistoricoGeral.length;
+      const sedesComVisita = listaSedesGeral.filter(s => s.total_vistorias > 0).length;
+      const emDia = listaSedesGeral.filter(s => s.status === "verde").length;
+      const atencao = listaSedesGeral.filter(s => s.status === "amarelo").length;
+      const atrasadas = listaSedesGeral.filter(s => s.status === "vermelho").length;
+      const pressaoAlta = listaSedesGeral.filter(s => s.ultima_pressao === "Alta").length;
+
+      document.getElementById("kpi-total-vistorias").innerText = totalV;
+      document.getElementById("kpi-sedes-visitadas").innerText = `${sedesComVisita} de ${listaSedesGeral.length}`;
+      const pct = listaSedesGeral.length ? Math.round((sedesComVisita / listaSedesGeral.length) * 100) : 0;
+      document.getElementById("kpi-sedes-percent").innerText = `${pct}% de cobertura`;
+      document.getElementById("kpi-em-dia").innerText = emDia;
+      document.getElementById("kpi-atencao").innerText = atencao;
+      document.getElementById("kpi-atrasadas").innerText = atrasadas;
+      document.getElementById("kpi-pressao-alta").innerText = pressaoAlta;
+      const intervalos = listaSedesGeral.flatMap(s => s.intervalos);
+      document.getElementById("kpi-retorno-medio").innerText = intervalos.length
+        ? `${formatarDias(intervalos.reduce((a, b) => a + b, 0) / intervalos.length)} dias` : "Primeiro ciclo";
+
+      document.getElementById("badge-count-sedes").innerText = listaSedesGeral.length;
+      document.getElementById("badge-count-historico").innerText = totalV;
+    }
+
+    // =========================================================================
+    // ATUALIZAÇÃO DOS GRÁFICOS (CHART.JS)
+    // =========================================================================
+    function atualizarGraficos() {
+      // 1. Gráfico Semanal: vistorias por nível de pressão, da mais antiga à mais recente
+      const semanasMap = new Map();
+      listaHistoricoGeral.forEach(v => {
+        const dt = parseDataBR(v.data_vistoria || v.data);
+        if (dt) {
+          const sem = getSemana(dt);
+          if (!semanasMap.has(sem.id)) semanasMap.set(sem.id, { rotulo: sem.rotulo, Alta: 0, "Média": 0, Baixa: 0 });
+          const contagem = semanasMap.get(sem.id);
+          if (contagem[v.pressao] !== undefined) contagem[v.pressao]++;
+        }
+      });
+
+      const semanas = Array.from(semanasMap.keys()).sort().slice(-8).map(k => semanasMap.get(k)); // ultimas 8 semanas
+      const serieSemanal = (nivel, cor) => ({ label: nivel, data: semanas.map(s => s[nivel]), backgroundColor: cor });
+
+      if (chartSemanal) chartSemanal.destroy();
+      const ctxSem = document.getElementById("chart-semanal").getContext("2d");
+      chartSemanal = new Chart(ctxSem, {
+        type: "bar",
+        data: {
+          labels: semanas.length ? semanas.map(s => s.rotulo) : ["Sem dados"],
+          datasets: [serieSemanal("Alta", "#ef4444"), serieSemanal("Média", "#f97316"), serieSemanal("Baixa", "#38bdf8")]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: "#cbd5e1", font: { size: 11 }, boxWidth: 12 } }
+          },
+          scales: {
+            x: { stacked: true, grid: { color: "#334155" }, ticks: { color: "#94a3b8", font: { size: 10 } } },
+            y: { stacked: true, grid: { color: "#334155" }, ticks: { color: "#94a3b8", stepSize: 1 } }
+          }
+        }
+      });
+
+      // Plugin customizado para desenhar os valores diretamente dentro das fatias da rosca
+      const pluginValoresRosca = {
+        id: "pluginValoresRosca",
+        afterDatasetsDraw(chart) {
+          if (chart.config.type !== "doughnut") return;
+          const { ctx } = chart;
+          chart.data.datasets.forEach((dataset, datasetIndex) => {
+            const meta = chart.getDatasetMeta(datasetIndex);
+            if (!meta || meta.hidden) return;
+            meta.data.forEach((element, index) => {
+              const val = dataset.data[index];
+              if (val > 0) {
+                const pos = element.tooltipPosition();
+                ctx.save();
+                ctx.font = "bold 13px Inter, Arial, sans-serif";
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 1;
+                ctx.fillText(String(val), pos.x, pos.y);
+                ctx.restore();
+              }
+            });
+          });
+        }
+      };
+
+      // 2. Gráfico de Cobertura de Sedes (Verde / Amarelo / Vermelho)
+      const emDia = listaSedesGeral.filter(s => s.status === "verde").length;
+      const atencao = listaSedesGeral.filter(s => s.status === "amarelo").length;
+      const atrasadas = listaSedesGeral.filter(s => s.status === "vermelho").length;
+
+      if (chartStatus) chartStatus.destroy();
+      const ctxSt = document.getElementById("chart-status").getContext("2d");
+      chartStatus = new Chart(ctxSt, {
+        type: "doughnut",
+        data: {
+          labels: [`Em Dia (${emDia})`, `Atenção (${atencao})`, `Atrasadas (${atrasadas})`],
+          datasets: [{
+            data: [emDia, atencao, atrasadas],
+            backgroundColor: ["#22c55e", "#f59e0b", "#ef4444"],
+            borderWidth: 1, // Contorno fino
+            borderColor: "#1e293b"
+          }]
+        },
+        plugins: [pluginValoresRosca],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                color: "#cbd5e1",
+                font: { size: 10, weight: "bold" },
+                boxWidth: 12,
+                padding: 10
+              }
+            }
+          }
+        }
+      });
+
+      // 3. Gráfico de Níveis de Pressão
+      const alta = listaSedesGeral.filter(s => s.ultima_pressao === "Alta").length;
+      const media = listaSedesGeral.filter(s => s.ultima_pressao === "Média").length;
+      const baixa = listaSedesGeral.filter(s => s.ultima_pressao === "Baixa").length;
+      const semV = listaSedesGeral.filter(s => s.ultima_pressao === "-").length;
+
+      if (chartPressao) chartPressao.destroy();
+      const ctxPr = document.getElementById("chart-pressao").getContext("2d");
+      chartPressao = new Chart(ctxPr, {
+        type: "doughnut",
+        data: {
+          labels: [`Alta (${alta})`, `Média (${media})`, `Baixa (${baixa})`, `Sem Visita (${semV})`],
+          datasets: [{
+            data: [alta, media, baixa, semV],
+            backgroundColor: ["#ef4444", "#f97316", "#38bdf8", "#64748b"],
+            borderWidth: 1, // Contorno fino
+            borderColor: "#1e293b"
+          }]
+        },
+        plugins: [pluginValoresRosca],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                color: "#cbd5e1",
+                font: { size: 10, weight: "bold" },
+                boxWidth: 12,
+                padding: 10
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function getSemana(d) {
+      const target = new Date(d.valueOf());
+      const dayNr = (d.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayNr + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+      }
+      const week = 1 + Math.ceil((firstThursday - target) / 604800000);
+      return { id: `${target.getFullYear()}-W${String(week).padStart(2, "0")}`, rotulo: `Sem ${week}` };
+    }
+
+    // =========================================================================
+    // FILTROS
+    // =========================================================================
+    function popularFiltroRegiao() {
+      const sel = document.getElementById("filtro-regiao");
+      const regioes = new Set();
+      listaSedesGeral.forEach(s => {
+        if (s.regiao && s.regiao !== "-") regioes.add(s.regiao);
+      });
+      sel.innerHTML = '<option value="todas">Região: Todas</option>';
+      Array.from(regioes).sort().forEach(r => {
+        sel.innerHTML += `<option value="${r}">${r}</option>`;
+      });
+    }
+
+    function aplicarFiltros() {
+      const termo = document.getElementById("filtro-busca").value.toLowerCase().trim();
+      const fStatus = document.getElementById("filtro-status").value;
+      const fPressao = document.getElementById("filtro-pressao").value;
+      const fRegiao = document.getElementById("filtro-regiao").value;
+
+      if (abaAtiva === "sedes") {
+        const filtradas = listaSedesGeral.filter(s => {
+          if (fStatus !== "todos" && s.status !== fStatus) return false;
+          if (fPressao !== "todas" && s.ultima_pressao !== fPressao) return false;
+          if (fRegiao !== "todas" && s.regiao !== fRegiao) return false;
+          if (termo) {
+            const matchSede = s.num_sede.toLowerCase().includes(termo);
+            const matchNome = (s.nome_sede || "").toLowerCase().includes(termo);
+            const matchFaz = (s.fazenda || "").toLowerCase().includes(termo);
+            const matchProp = (s.proprietario || "").toLowerCase().includes(termo);
+            const matchReg = (s.regiao || "").toLowerCase().includes(termo);
+            if (!matchSede && !matchNome && !matchFaz && !matchProp && !matchReg) return false;
+          }
+          return true;
+        });
+        renderizarTabelaSedes(filtradas);
+      } else {
+        const filtradasH = listaHistoricoGeral.filter(v => {
+          if (fPressao !== "todas" && v.pressao !== fPressao) return false;
+          if (fRegiao !== "todas" && v.regiao !== fRegiao) return false;
+          if (termo) {
+            const matchS = String(v.num_sede || "").toLowerCase().includes(termo);
+            const matchF = (v.fazenda || v.nome_sede || "").toLowerCase().includes(termo);
+            const matchM = (v.matricula || "").toLowerCase().includes(termo);
+            const matchO = (v.observacoes || "").toLowerCase().includes(termo);
+            if (!matchS && !matchF && !matchM && !matchO) return false;
+          }
+          return true;
+        });
+        renderizarTabelaHistorico(filtradasH);
+      }
+    }
+
+    // =========================================================================
+    // RENDERIZAR TABELA: STATUS DAS SEDES
+    // =========================================================================
+    function renderizarTabelaSedes(sedes) {
+      const tbody = document.getElementById("tbody-sedes");
+      if (!sedes.length) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhuma sede encontrada com os filtros selecionados.</td></tr>';
+        document.getElementById("footer-sedes-info").innerText = "0 sedes encontradas";
+        return;
+      }
+
+      let html = "";
+      sedes.forEach(s => {
+        const badgeStClass = s.status === "verde" ? "badge-verde" : (s.status === "amarelo" ? "badge-amarelo" : "badge-vermelho");
+        const badgePClass = s.ultima_pressao === "Alta" ? "badge-alta" : (s.ultima_pressao === "Média" ? "badge-media" : (s.ultima_pressao === "Baixa" ? "badge-baixa" : "badge-sem"));
+        const diasTxt = s.dias_sem_visita >= 999 ? "Nunca" : `${s.dias_sem_visita} dia(s)`;
+        const linkMaps = (s.lat && s.lon) ? `https://www.google.com/maps?q=${s.lat},${s.lon}` : null;
+
+        html += `
+          <tr>
+            <td style="font-weight:800; color:#fff;">#${s.num_sede}</td>
+            <td><strong>${s.nome_sede}</strong><br><span style="font-size:10px; color:var(--text-muted);">${s.fazenda}</span></td>
+            <td>${s.regiao || '-'}</td>
+            <td>${s.proprietario || '-'}</td>
+            <td><strong>${s.ultima_data}</strong></td>
+            <td><span class="badge ${badgeStClass}">${diasTxt}</span></td>
+            <td><span class="badge ${badgeStClass}">${s.status_texto}</span></td>
+            <td><span class="badge ${badgePClass}">${s.ultima_pressao}</span></td>
+            <td style="font-weight:700;">${s.ultimas_bandeiras}</td>
+            <td style="text-align:center;"><span style="background:#334155; padding:2px 8px; border-radius:6px; font-weight:700;">${s.total_vistorias}</span></td>
+            <td style="text-align:center;">${s.retorno_medio !== null ? `${formatarDias(s.retorno_medio)} d` : '-'}</td>
+            <td>
+              ${linkMaps ? `<a href="${linkMaps}" target="_blank" class="link-maps"><i class="fa-solid fa-location-dot"></i> Maps</a>` : '-'}
+              <a href="#calor" onclick="abrirCalorNaSede('${s.num_sede}'); return false;" class="link-maps"><i class="fa-solid fa-fire"></i> Calor</a>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById("footer-sedes-info").innerText = `Exibindo ${sedes.length} de ${listaSedesGeral.length} sedes oficiais`;
+    }
+
+    // =========================================================================
+    // RENDERIZAR TABELA: HISTÓRICO COMPLETO
+    // =========================================================================
+    function renderizarTabelaHistorico(vistorias) {
+      const tbody = document.getElementById("tbody-historico");
+      if (!vistorias.length) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhuma vistoria encontrada com os filtros selecionados.</td></tr>';
+        document.getElementById("footer-historico-info").innerText = "0 vistorias encontradas";
+        return;
+      }
+
+      let html = "";
+      vistorias.forEach(v => {
+        const badgePClass = v.pressao === "Alta" ? "badge-alta" : (v.pressao === "Média" ? "badge-media" : "badge-baixa");
+        const lat = v.lat || v.latitude_gps_lancamento;
+        const lon = v.lon || v.longitude_gps_lancamento;
+        const linkGps = (lat && lon) ? `https://www.google.com/maps?q=${lat},${lon}` : null;
+        const distTxt = v.distancia_sede_metros !== undefined && v.distancia_sede_metros !== "" ? `${v.distancia_sede_metros} m` : "-";
+        const distMax = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.distancia_max_metros) || 500;
+        const distForaLimite = distTxt !== "-" && Number(v.distancia_sede_metros) > distMax;
+        const alertasTxt = (v.alertas && v.alertas.length) ? v.alertas.join("; ") : (distForaLimite ? `GPS a mais de ${distMax} m da sede` : "");
+
+        html += `
+          <tr>
+            <td><strong>${v.data_vistoria || v.data || '-'}</strong><br><span style="font-size:10px; color:var(--text-muted);">${v.hora_vistoria || v.hora || ''}</span></td>
+            <td style="font-weight:800; color:#fff;">#${v.num_sede || '-'}</td>
+            <td><strong>${v.fazenda || v.nome_sede || '-'}</strong><br><span style="font-size:10px; color:var(--text-muted);">${v.proprietario || ''}</span></td>
+            <td><i class="fa-solid fa-user-check" style="color:#22c55e;"></i> ${v.matricula || '-'}</td>
+            <td><span class="badge ${badgePClass}">${v.pressao || '-'}</span></td>
+            <td style="font-weight:700;">${v.bandeiras || '0'}</td>
+            <td>${v.larva_pupa || '-'}</td>
+            <td>${v.inseticida || '-'}</td>
+            <td style="font-size:11px;">${v.possiveis_causadores || '-'}</td>
+            <td style="font-size:11px; color:${distForaLimite ? '#f87171' : '#38bdf8'};" title="${alertasTxt}">${distForaLimite ? '<i class="fa-solid fa-triangle-exclamation"></i> ' : ''}${distTxt}</td>
+            <td style="font-size:11px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${v.observacoes || ''}">${v.observacoes || '-'}</td>
+            <td>
+              ${linkGps ? `<a href="${linkGps}" target="_blank" class="link-maps"><i class="fa-solid fa-crosshairs"></i> GPS</a>` : '-'}
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById("footer-historico-info").innerText = `Exibindo ${vistorias.length} de ${listaHistoricoGeral.length} vistorias`;
+    }
+
+    // =========================================================================
+    // ALTERNAR ABAS
+    // =========================================================================
+    function alternarAba(aba) {
+      abaAtiva = aba;
+      const btnSedes = document.getElementById("tab-btn-sedes");
+      const btnHist = document.getElementById("tab-btn-historico");
+      const cSedes = document.getElementById("tab-content-sedes");
+      const cHist = document.getElementById("tab-content-historico");
+
+      if (aba === "sedes") {
+        btnSedes.classList.add("active");
+        btnHist.classList.remove("active");
+        cSedes.style.display = "block";
+        cHist.style.display = "none";
+      } else {
+        btnHist.classList.add("active");
+        btnSedes.classList.remove("active");
+        cSedes.style.display = "none";
+        cHist.style.display = "block";
+      }
+      aplicarFiltros();
+    }
+
+    // =========================================================================
+    // ABAS PRINCIPAIS: PAINEL E CALOR & RETORNO
+    // =========================================================================
+    function alternarVisao(visao) {
+      const calor = visao === "calor";
+      const frame = document.getElementById("frame-calor");
+      document.getElementById("view-btn-painel").classList.toggle("active", !calor);
+      document.getElementById("view-btn-calor").classList.toggle("active", calor);
+      document.getElementById("view-painel").style.display = calor ? "none" : "block";
+      document.getElementById("view-calor").style.display = calor ? "block" : "none";
+      history.replaceState(null, "", calor ? "#calor" : location.pathname + location.search);
+
+      if (calor) {
+        if (!frame.getAttribute("src")) frame.src = "analise_frequencia.html";
+        window.scrollTo(0, 0);
+        ajustarAlturaCalor();
+      } else {
+        [chartSemanal, chartStatus, chartPressao].forEach(c => { if (c) c.resize(); });
+      }
+    }
+
+    function ajustarAlturaCalor() {
+      const frame = document.getElementById("frame-calor");
+      frame.style.height = `${Math.max(480, window.innerHeight - frame.getBoundingClientRect().top)}px`;
+    }
+    function reajustarCalorSeVisivel() {
+      if (document.getElementById("view-calor").style.display !== "none") ajustarAlturaCalor();
+    }
+    window.addEventListener("resize", reajustarCalorSeVisivel);
+    // O cabeçalho muda de altura quando os botões quebram linha ou a fonte termina de carregar
+    new ResizeObserver(reajustarCalorSeVisivel).observe(document.querySelector("header"));
+
+    function abrirCalorNaSede(numSede) {
+      document.getElementById("frame-calor").src = `analise_frequencia.html#sede=${encodeURIComponent(numSede)}`;
+      alternarVisao("calor");
+    }
+
+    // =========================================================================
+    // EXPORTAR EXCEL COMPLETO (.XLSX) DIRETAMENTE NO NAVEGADOR
+    // =========================================================================
+    function exportarExcelCompleto() {
+      if (typeof XLSX === "undefined") {
+        alert("Biblioteca XLSX ainda carregando. Aguarde 2 segundos e tente novamente.");
+        return;
+      }
+
+      // 1. Dados da Planilha: Status Atual das Sedes
+      const dadosAbaSedes = listaSedesGeral.map(s => ({
+        "Nº Sede": s.num_sede,
+        "Nome da Sede": s.nome_sede,
+        "FA": s.fa,
+        "Fazenda": s.fazenda,
+        "Proprietário": s.proprietario,
+        "Região": s.regiao,
+        "Última Data Vistoria": s.ultima_data,
+        "Dias Sem Visita": s.dias_sem_visita >= 999 ? "Sem Visita" : s.dias_sem_visita,
+        "Status Temático": s.status_texto,
+        "Pressão de Mosca": s.ultima_pressao,
+        "Bandeiras": s.ultimas_bandeiras,
+        "Total de Vistorias": s.total_vistorias,
+        "Retorno Médio (dias)": s.retorno_medio !== null ? Number(s.retorno_medio.toFixed(1)) : "",
+        "Latitude Sede": s.lat,
+        "Longitude Sede": s.lon,
+        "Link Google Maps": (s.lat && s.lon) ? `https://www.google.com/maps?q=${s.lat},${s.lon}` : ""
+      }));
+
+      // 2. Dados da Planilha: Histórico Completo de Vistorias
+      const dadosAbaHistorico = listaHistoricoGeral.map(v => ({
+        "Nº Sede": v.num_sede,
+        "Fazenda": v.fazenda || v.nome_sede,
+        "Proprietário": v.proprietario,
+        "Região": v.regiao,
+        "Data Vistoria": v.data_vistoria || v.data,
+        "Hora Vistoria": v.hora_vistoria || v.hora,
+        "Avaliador (Matrícula)": v.matricula,
+        "Pressão de Moscas": v.pressao,
+        "Nº Bandeiras": v.bandeiras,
+        "Larva/Pupa": v.larva_pupa,
+        "Inseticida": v.inseticida,
+        "Possíveis Causadores": v.possiveis_causadores,
+        "Observações": v.observacoes,
+        "Latitude GPS Lançamento": v.lat || v.latitude_gps_lancamento,
+        "Longitude GPS Lançamento": v.lon || v.longitude_gps_lancamento,
+        "Distância Sede (m)": v.distancia_sede_metros,
+        "Alertas de Validação": (v.alertas || []).join("; "),
+        "Link Google Maps Ponto GPS": (v.lat && v.lon) ? `https://www.google.com/maps?q=${v.lat},${v.lon}` : "",
+        "Data Submissão Kobo": v.submetido_em || ""
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const wsSedes = XLSX.utils.json_to_sheet(dadosAbaSedes);
+      const wsHist = XLSX.utils.json_to_sheet(dadosAbaHistorico);
+
+      XLSX.utils.book_append_sheet(wb, wsSedes, "Status_Atual_Sedes");
+      XLSX.utils.book_append_sheet(wb, wsHist, "Historico_Vistorias");
+
+      const dNow = new Date();
+      const filename = `BioMonitor_Relatorio_Vistorias_${dNow.getFullYear()}-${String(dNow.getMonth()+1).padStart(2,'0')}-${String(dNow.getDate()).padStart(2,'0')}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    }
+
+    // =========================================================================
+    // COMPARTILHAR LINK ONLINE PARA CELULAR / WHATSAPP
+    // =========================================================================
+    function compartilharRelatorio() {
+      if (navigator.share) {
+        navigator.share({
+          title: "BioMonitor | Relatório Online de Vistorias",
+          text: "Acesse o Relatório Executivo de Vistorias BioMonitor:",
+          url: URL_RELATORIO
+        }).catch(() => {});
+      } else {
+        copiarLinkOnline();
+      }
+    }
+
+    function copiarLinkOnline() {
+      const url = URL_RELATORIO;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          alert("✅ Link oficial do BioMonitor copiado com sucesso!\n\n" + url + "\n\nVocê já pode colar no WhatsApp ou enviar para qualquer pessoa abrir no celular.");
+        }).catch(() => {
+          prompt("Copie o link abaixo para abrir no celular ou enviar no WhatsApp:", url);
+        });
+      } else {
+        prompt("Copie o link abaixo para abrir no celular ou enviar no WhatsApp:", url);
+      }
+    }
+
+    // =========================================================================
+    // AJUSTES DINÂMICOS PARA IMPRESSÃO (LEGENDAS PRETAS E LINHAS FINAS)
+    // =========================================================================
+    function prepararEImprimir() {
+      alternarVisao("painel");
+      ajustarGraficosParaImpressao();
+      setTimeout(() => {
+        window.print();
+      }, 150);
+    }
+
+    function ajustarGraficosParaImpressao() {
+      if (chartStatus) {
+        chartStatus.options.plugins.legend.labels.color = "#000000";
+        chartStatus.data.datasets[0].borderColor = "#ffffff";
+        chartStatus.data.datasets[0].borderWidth = 1;
+        chartStatus.update('none');
+        chartStatus.resize();
+      }
+      if (chartPressao) {
+        chartPressao.options.plugins.legend.labels.color = "#000000";
+        chartPressao.data.datasets[0].borderColor = "#ffffff";
+        chartPressao.data.datasets[0].borderWidth = 1;
+        chartPressao.update('none');
+        chartPressao.resize();
+      }
+      if (chartSemanal) {
+        chartSemanal.options.plugins.legend.labels.color = "#000000";
+        chartSemanal.options.scales.x.ticks.color = "#000000";
+        chartSemanal.options.scales.y.ticks.color = "#000000";
+        chartSemanal.options.scales.x.grid.color = "#e2e8f0";
+        chartSemanal.options.scales.y.grid.color = "#e2e8f0";
+        chartSemanal.update('none');
+        chartSemanal.resize();
+      }
+    }
+
+    function restaurarGraficosAposImpressao() {
+      if (chartStatus) {
+        chartStatus.options.plugins.legend.labels.color = "#cbd5e1";
+        chartStatus.data.datasets[0].borderColor = "#1e293b";
+        chartStatus.data.datasets[0].borderWidth = 1;
+        chartStatus.update('none');
+        chartStatus.resize();
+      }
+      if (chartPressao) {
+        chartPressao.options.plugins.legend.labels.color = "#cbd5e1";
+        chartPressao.data.datasets[0].borderColor = "#1e293b";
+        chartPressao.data.datasets[0].borderWidth = 1;
+        chartPressao.update('none');
+        chartPressao.resize();
+      }
+      if (chartSemanal) {
+        chartSemanal.options.plugins.legend.labels.color = "#cbd5e1";
+        chartSemanal.options.scales.x.ticks.color = "#94a3b8";
+        chartSemanal.options.scales.y.ticks.color = "#94a3b8";
+        chartSemanal.options.scales.x.grid.color = "#334155";
+        chartSemanal.options.scales.y.grid.color = "#334155";
+        chartSemanal.update('none');
+        chartSemanal.resize();
+      }
+    }
+
+    window.addEventListener('beforeprint', ajustarGraficosParaImpressao);
+    window.addEventListener('afterprint', restaurarGraficosAposImpressao);
+
+    if (window.matchMedia) {
+      window.matchMedia('print').addEventListener('change', (mql) => {
+        if (mql.matches) {
+          ajustarGraficosParaImpressao();
+        } else {
+          restaurarGraficosAposImpressao();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "kobo": {
+    "servidor": "kf.kobotoolbox.org",
+    "asset_uid": "aK9E8d8UZ5XkKCXqwWnmpG",
+    "tamanho_pagina": 1000
+  },
+  "monitoramento": {
+    "inicio": "2026-11-05"
+  },
+  "status": {
+    "verde_max_dias": 7,
+    "amarelo_max_dias": 15
+  },
+  "validacao": {
+    "distancia_max_metros": 500,
+    "matricula_regex": "^\\d{1,6}$"
+  },
+  "privacidade": {
+    "mascarar_matricula_no_site": true,
+    "publicar_gps_avaliador_no_site": true
+  }
+}
