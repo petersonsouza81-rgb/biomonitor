@@ -648,7 +648,7 @@
     <label>Até (opcional)
       <input type="date" id="filtro-ate" onchange="gerarRelatorio()">
     </label>
-    <button class="btn" onclick="BioMonitorAtualizacao.abrir()" title="Buscar vistorias e fotos novas no KoboToolbox"><i class="fa-solid fa-cloud-arrow-down"></i> Atualizar dados</button>
+    <button class="btn" onclick="BioMonitorAtualizacao.abrir()" title="Buscar vistorias e fotos novas no banco"><i class="fa-solid fa-cloud-arrow-down"></i> Atualizar dados</button>
     <button class="btn btn-pdf" id="btn-pdf" onclick="salvarPdf()"><i class="fa-solid fa-file-pdf"></i> Salvar PDF</button>
   </div>
 
@@ -656,10 +656,10 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Dados Geográficos e Vistorias -->
-  <script src="dados_mapa.js"></script>
-  <!-- Botão Atualizar dados (GitHub Actions) -->
-  <script src="atualizar_dados.js"></script>
+  <!-- Login e dados da usina no Supabase (substitui o dados_mapa.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="supabase_config.js"></script>
+  <script src="biomonitor_nuvem.js"></script>
   <script>
     const LIM_VERDE = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.verde_max_dias) || 7;
     const LIM_AMARELO = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.amarelo_max_dias) || 15;

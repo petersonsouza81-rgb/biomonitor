@@ -898,8 +898,8 @@
     </div>
 
     <div class="header-actions">
-      <!-- Buscar vistorias e fotos novas no Kobo (GitHub Actions) -->
-      <button class="btn-action" onclick="BioMonitorAtualizacao.abrir()" title="Buscar vistorias e fotos novas no KoboToolbox">
+      <!-- Buscar vistorias e fotos novas no banco -->
+      <button class="btn-action" onclick="BioMonitorAtualizacao.abrir()" title="Buscar vistorias e fotos novas no banco">
         <i class="fa-solid fa-cloud-arrow-down"></i> Atualizar dados
       </button>
 
@@ -1163,10 +1163,11 @@
   </div>
 
   <!-- SCRIPT DE DADOS E LÓGICA -->
-  <script src="dados_mapa.js"></script>
-  <script src="atualizar_dados.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="supabase_config.js"></script>
+  <script src="biomonitor_nuvem.js"></script>
   <script>
-    // Limites de status (dias) vindos de scripts/biomonitor_config.json via dados_mapa.js
+    // Limites de status (dias) da usina, vindos do banco via biomonitor_nuvem.js
     const LIM_VERDE = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.verde_max_dias) || 7;
     const LIM_AMARELO = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.amarelo_max_dias) || 15;
     function aplicarTextosLimites() {
@@ -1216,16 +1217,8 @@
     async function carregarDadosRelatorio() {
       // 1. Carregar Vistorias
       let vistorias = [];
-      try {
-        // Tentar buscar json mais atualizado
-        const r = await fetch("vistorias_kobo.json?_t=" + Date.now());
-        if (r.ok) {
-          vistorias = await r.json();
-        }
-      } catch (e) {}
-
-      if (!vistorias.length && typeof DADOS_VISTORIAS_KOBO !== "undefined" && Array.isArray(DADOS_VISTORIAS_KOBO)) {
-        vistorias = DADOS_VISTORIAS_KOBO;
+      if (typeof DADOS_VISTORIAS_KOBO !== "undefined" && Array.isArray(DADOS_VISTORIAS_KOBO)) {
+        vistorias = DADOS_VISTORIAS_KOBO.slice();
       }
 
       // Mesclar visitas locais de contingência

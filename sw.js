@@ -1,5 +1,5 @@
 // A versao abaixo e atualizada automaticamente por scripts/atualizar_base_web.py
-const CACHE_NAME = 'biomonitor-sedes-20261106-1144';
+const CACHE_NAME = 'biomonitor-sedes-20261109-supabase';
 
 // Arquivos do proprio app
 const ASSETS_LOCAIS = [
@@ -9,10 +9,9 @@ const ASSETS_LOCAIS = [
   './analise_frequencia.html',
   './relatorio.html',
   './relatorio_sede.html',
-  './atualizar_dados.js',
   './manual.html',
-  './dados_mapa.js',
-  './vistorias_kobo.json',
+  './supabase_config.js',
+  './biomonitor_nuvem.js',
   './manifest.json',
   './favicon.ico',
   './logos/icon-192.png',
@@ -30,7 +29,8 @@ const ASSETS_EXTERNOS = [
   'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js'
 ];
 
 const HOSTS_EXTERNOS = ['unpkg.com', 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
@@ -65,7 +65,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET') return; // envios ao Kobo (POST) nao passam pelo cache
+  if (req.method !== 'GET') return; // envios ao banco (POST) nao passam pelo cache
   const url = new URL(req.url);
   const externo = HOSTS_EXTERNOS.includes(url.hostname);
   const mesmoSite = url.origin === self.location.origin;

@@ -1947,10 +1947,12 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Dados Geográficos -->
-  <script src="dados_mapa.js"></script>
+  <!-- Login e dados da usina no Supabase (substitui o dados_mapa.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="supabase_config.js"></script>
+  <script src="biomonitor_nuvem.js"></script>
   <script>
-    // Limites de status (dias) vindos de scripts/biomonitor_config.json via dados_mapa.js
+    // Limites de status (dias) da usina, vindos do banco via biomonitor_nuvem.js
     const LIM_VERDE = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.verde_max_dias) || 7;
     const LIM_AMARELO = (typeof CONFIG_BIOMONITOR !== "undefined" && CONFIG_BIOMONITOR.amarelo_max_dias) || 15;
     function aplicarTextosLimites() {
@@ -1963,21 +1965,8 @@
   </script>
 
   <script>
-        const ASSET_UID = "aK9E8d8UZ5XkKCXqwWnmpG";
-    const KOBO_SUBMISSION_URL = "https://kc.kobotoolbox.org/comercial_ps/submission";
-
     let userLat = null, userLon = null, userAcc = null;
     let userMarker = null, userAccCircle = null;
-
-    function escapeXml(str) {
-      if (!str) return "";
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-    }
 
     let map;
     let markersLayer = L.layerGroup();
@@ -2004,7 +1993,6 @@
       initMap();
       carregarCamadas();
       atualizarContadores();
-      sincronizarVistoriasRemotas();
       iniciarGpsTempoReal();
       iniciarFilaEnvio();
       montarCamposFoto();
@@ -2024,8 +2012,10 @@
         if (legendChevron) legendChevron.className = "fa-solid fa-chevron-up";
       }
 
-      // Lembrar matrícula do avaliador
-      const mat = localStorage.getItem("biomonitor_matricula");
+      // Lembrar matrícula do avaliador (ou usar a do perfil no banco)
+      const usuarioNuvem = window.BioMonitorNuvem && BioMonitorNuvem.usuario();
+      const mat = localStorage.getItem("biomonitor_matricula") ||
+        (usuarioNuvem && usuarioNuvem.perfil && usuarioNuvem.perfil.matricula) || "";
       if (mat) document.getElementById("form-matricula").value = mat;
 
       // Registrar Service Worker
@@ -2252,38 +2242,13 @@
       });
     }
 
-    function sincronizarVistoriasRemotas() {
-      fetch("./vistorias_kobo.json?_t=" + Date.now())
-        .then(res => {
-          if (res.ok) return res.json();
-          throw new Error("vistorias_kobo.json indisponivel");
-        })
-        .then(remotas => {
-          if (Array.isArray(remotas) && remotas.length > 0) {
-            let adicionados = 0;
-            remotas.forEach(rv => {
-              const jaExiste = historicoVisitas.some(hv =>
-                (hv.instance_id && rv.instance_id && hv.instance_id === rv.instance_id) ||
-                String(hv.num_sede) === String(rv.num_sede) &&
-                (hv.data_vistoria || hv.data) === (rv.data_vistoria || rv.data) &&
-                (hv.hora_vistoria || hv.hora) === (rv.hora_vistoria || rv.hora)
-              );
-              if (!jaExiste) {
-                historicoVisitas.push(rv);
-                adicionados++;
-              }
-            });
-            if (adicionados > 0) {
-              console.log(`[KOBO SYNC] ${adicionados} novas vistorias sincronizadas.`);
-              renderizarSedes();
-              atualizarContadores();
-            }
-          }
-        })
-        .catch(err => {
-          console.log("[KOBO SYNC] Operando com base embutida local:", err.message);
-        });
-    }
+    // Chamado pelo biomonitor_nuvem.js quando chegam dados novos do banco
+    window.aoReceberDadosNuvem = function () {
+      carregarHistorico();
+      carregarCamadas();
+      atualizarContadores();
+      mostrarDataAtualizacao();
+    };
 
     function initMap() {
       // Centro aproximado de Araçatuba / SP
@@ -2777,7 +2742,9 @@
       const locSede = (sedeLat && sedeLon) ? `${sedeLat}, ${sedeLon}` : "";
       const linkMapsSede = (sedeLat && sedeLon) ? `https://www.google.com/maps?q=${sedeLat},${sedeLon}` : "";
 
-      const instanceId = 'uuid:' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + '-' + Math.random().toString(36).substring(2)));
+      // O id nasce no celular: reenviar a mesma vistoria nunca duplica no banco
+      const vistoriaId = novoUuid();
+      const instanceId = 'uuid:' + vistoriaId;
 
       const novaVistoria = {
         num_sede: numSede,
@@ -2813,44 +2780,32 @@
       historicoVisitas.push(novaVistoria);
       localStorage.setItem("visitas_historico", JSON.stringify(historicoVisitas));
 
-      // Enviar vistoria diretamente para o KoboToolbox na nuvem
+      // Vistoria entra na fila do celular e vai para o banco quando houver sinal
       try {
-        const uuid = instanceId;
-        const xml = `<?xml version="1.0"?>
-<data id="${ASSET_UID}" version="20261027">
-  <num_sede>${escapeXml(numSede)}</num_sede>
-  <nome_sede>${escapeXml(nomeSede)}</nome_sede>
-  <fa>${escapeXml(sedeSelecionada ? (sedeSelecionada.properties.fa || "") : "")}</fa>
-  <fazenda>${escapeXml(fazenda)}</fazenda>
-  <proprietario>${escapeXml(proprietario)}</proprietario>
-  <regiao>${escapeXml(sedeSelecionada ? (sedeSelecionada.properties.regiao || "") : "")}</regiao>
-  <data_vistoria>${dataV}</data_vistoria>
-  <hora_vistoria>${horaV}</hora_vistoria>
-  <matricula>${escapeXml(matricula)}</matricula>
-  <pressao>${pressao}</pressao>
-  <bandeiras>${parseInt(bandeiras)}</bandeiras>
-  <larva_pupa>${larvaPupa}</larva_pupa>
-  <inseticida>${inseticida}</inseticida>
-  <possiveis_causadores>${escapeXml(causador)}</possiveis_causadores>
-  <observacoes>${escapeXml(obs)}</observacoes>
-  <localizacao_gps>${lat} ${lon} 0 ${userAcc || 5}</localizacao_gps>
-  <latitude>${lat}</latitude>
-  <longitude>${lon}</longitude>
-  <lat_sede>${sedeLat}</lat_sede>
-  <lon_sede>${sedeLon}</lon_sede>
-  <localizacao_sede>${locSede}</localizacao_sede>
-  <link_google_maps_sede>${linkMapsSede}</link_google_maps_sede>
-${fotosSalvar.map(f => `  <foto_${f.campo}>${escapeXml(f.nome)}</foto_${f.campo}>`).join("\n")}
-  <meta>
-    <instanceID>${uuid}</instanceID>
-  </meta>
-</data>`;
+        const sp = sedeSelecionada ? sedeSelecionada.properties : {};
+        const p = String(dataV).split("/");
+        const registro = {
+          id: vistoriaId,
+          sede_id: sp.sede_id,
+          usina_id: sp.usina_id,
+          data_vistoria: p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : dataV,
+          hora_vistoria: horaV,
+          matricula: matricula,
+          pressao: pressao,
+          bandeiras: parseInt(bandeiras),
+          larva_pupa: larvaPupa,
+          inseticida: inseticida,
+          possiveis_causadores: causador,
+          observacoes: obs,
+          lat: (userLat !== null && userLat !== undefined) ? userLat : null,
+          lon: (userLon !== null && userLon !== undefined) ? userLon : null
+        };
         // Fotos primeiro no banco local, depois a vistoria entra na fila do celular
-        const fotosNoBanco = await guardarFotosVistoria(uuid, fotosSalvar);
+        const fotosNoBanco = await guardarFotosVistoria(instanceId, fotosSalvar);
         if (!fotosNoBanco) showToast("Atenção: envie a vistoria antes de fechar o app (fotos não ficam salvas neste navegador).", "info");
-        enfileirarEnvio(uuid, xml, numSede, fotosSalvar.map(f => f.nome));
-      } catch (koboErr) {
-        console.log("Kobo sync warning:", koboErr);
+        enfileirarEnvio(instanceId, registro, numSede, fotosSalvar.map(f => ({ nome: f.nome, campo: f.campo })));
+      } catch (errEnvio) {
+        console.log("Erro ao preparar o envio:", errEnvio);
         showToast("Erro ao preparar o envio da vistoria. Avise a coordenação.", "error");
       }
       salvandoVistoria = false;
@@ -3128,7 +3083,9 @@ ${fotosSalvar.map(f => `  <foto_${f.campo}>${escapeXml(f.nome)}</foto_${f.campo}
       inseticida: "Inseticida",
       causador: "Possíveis Causadores"
     };
-    const FOTO_LADO_MAX = 1600;
+    // Fotos reduzidas no celular: envio rapido no campo e cabem no limite de 1 MB do banco
+    const FOTO_LADO_MAX = 1280;
+    const FOTO_BYTES_MAX = 900 * 1024;
     let fotosVistoria = {};
     let salvandoVistoria = false;
     // Usado so quando o IndexedDB nao esta disponivel (ex.: aba anonima)
@@ -3285,8 +3242,12 @@ ${fotosSalvar.map(f => `  <foto_${f.campo}>${escapeXml(f.nome)}</foto_${f.campo}
         ctx.fillText("BioMonitor", w - pad, h - alturaFaixa + pad);
         ctx.textAlign = "left";
 
-        const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.82));
-        if (!blob) throw new Error("toBlob falhou");
+        let blob = null;
+        for (const qualidade of [0.8, 0.7, 0.6, 0.5]) {
+          blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", qualidade));
+          if (!blob) throw new Error("toBlob falhou");
+          if (blob.size <= FOTO_BYTES_MAX) break;
+        }
 
         if (fotosVistoria[campo]) URL.revokeObjectURL(fotosVistoria[campo].url);
         fotosVistoria[campo] = {
@@ -3377,10 +3338,19 @@ ${fotosSalvar.map(f => `  <foto_${f.campo}>${escapeXml(f.nome)}</foto_${f.campo}
       atualizarIndicadorFila();
     }
 
-    function enfileirarEnvio(instanceId, xml, numSede, nomesFotos = []) {
+    function novoUuid() {
+      if (crypto.randomUUID) return crypto.randomUUID();
+      const b = crypto.getRandomValues(new Uint8Array(16));
+      b[6] = (b[6] & 0x0f) | 0x40;
+      b[8] = (b[8] & 0x3f) | 0x80;
+      const h = Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+      return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+    }
+
+    function enfileirarEnvio(instanceId, registro, numSede, fotos = []) {
       const fila = lerFilaEnvio();
       if (!fila.some(i => i.instance_id === instanceId)) {
-        fila.push({ instance_id: instanceId, xml: xml, num_sede: numSede, fotos: nomesFotos, criadoEm: new Date().toISOString(), tentativas: 0 });
+        fila.push({ instance_id: instanceId, registro: registro, num_sede: numSede, fotos: fotos, criadoEm: new Date().toISOString(), tentativas: 0 });
       }
       gravarFilaEnvio(fila);
     }
@@ -3405,29 +3375,30 @@ ${fotosSalvar.map(f => `  <foto_${f.campo}>${escapeXml(f.nome)}</foto_${f.campo}
         if (manual) showToast(`Sem sinal. ${fila.length} vistoria(s) continuam guardadas no celular.`, "info");
         return;
       }
-      if (!KOBO_SUBMISSION_URL) {
-        if (manual) showToast("Kobo ainda não configurado. As vistorias continuam guardadas no celular.", "info");
+      if (!window.BioMonitorNuvem || !(await BioMonitorNuvem.temSessao())) {
+        if (manual) showToast("Entre com seu login para enviar as vistorias guardadas.", "error");
         return;
       }
       filaEmProcessamento = true;
       const restantes = [];
       let enviadas = 0;
       for (const item of fila) {
+        // Itens do formato antigo (Kobo) nao tem como ir para o banco
+        if (!item.registro) continue;
         try {
-          const fd = new FormData();
-          fd.append("xml_submission_file", new Blob([item.xml], { type: "text/xml" }), "submission.xml");
-          // Cada foto vai como anexo com o mesmo nome citado no XML
-          for (const nome of (item.fotos || [])) {
-            const blob = await lerFotoGuardada(item.instance_id, nome);
-            if (blob) fd.append(nome, blob, nome);
+          const fotos = [];
+          for (const f of (item.fotos || [])) {
+            const blob = await lerFotoGuardada(item.instance_id, f.nome);
+            if (blob) fotos.push({ campo: f.campo, blob: blob });
           }
-          // O Kobo ignora reenvios com o mesmo instanceID, entao repetir e seguro
-          await fetch(KOBO_SUBMISSION_URL, { method: "POST", body: fd, mode: "no-cors" });
-          if (item.fotos && item.fotos.length) await apagarFotosGuardadas(item.instance_id, item.fotos);
+          await BioMonitorNuvem.enviarVistoria(item.registro, fotos);
+          if (item.fotos && item.fotos.length) await apagarFotosGuardadas(item.instance_id, item.fotos.map(f => f.nome));
           enviadas++;
         } catch (err) {
+          console.log("Falha no envio da vistoria:", err);
           item.tentativas = (item.tentativas || 0) + 1;
           item.ultimaTentativa = new Date().toISOString();
+          item.ultimoErro = String((err && err.message) || err);
           restantes.push(item);
         }
       }
@@ -3437,6 +3408,7 @@ ${fotosSalvar.map(f => `  <foto_${f.campo}>${escapeXml(f.nome)}</foto_${f.campo}
       gravarFilaEnvio(restantes.concat(novas));
       filaEmProcessamento = false;
 
+      if (enviadas > 0) BioMonitorNuvem.atualizar(false);
       if (enviadas > 0 && restantes.length === 0) {
         showToast(`✅ ${enviadas} vistoria(s) enviada(s) para a nuvem.`, "success");
       } else if (restantes.length > 0) {

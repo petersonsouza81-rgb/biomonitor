@@ -441,8 +441,10 @@
   <!-- Leaflet.heat JS (Algoritmo de Densidade de Kernel) -->
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
-  <!-- Dados Geográficos e Vistorias Consolidadas -->
-  <script src="dados_mapa.js"></script>
+  <!-- Login e dados da usina no Supabase (substitui o dados_mapa.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="supabase_config.js"></script>
+  <script src="biomonitor_nuvem.js"></script>
   <script>
     // =========================================================================
     // ESTADO GLOBAL DA APLICAÇÃO
