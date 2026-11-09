@@ -26,8 +26,8 @@ SAIDA = os.path.join(ROOT_DIR, "dados_locais", "supabase_dados_iniciais.sql")
 # Ids fixos para a empresa e a usina de demonstracao: rodar de novo nao duplica nada
 EMPRESA_DEMO = "b10b0000-0000-4000-8000-000000000001"
 USINA_DEMO = "b10b0000-0000-4000-8000-000000000002"
-EMPRESA_DEMO_NOME = "Empresa Demonstração"
-USINA_DEMO_NOME = "Usina Demonstração - Araçatuba"
+EMPRESA_DEMO_NOME = "Usina A"
+USINA_DEMO_NOME = "Unidade Araçatuba"
 
 
 def txt(v):

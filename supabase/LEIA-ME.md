@@ -7,7 +7,8 @@ Só passe para o plano pago quando o primeiro cliente fechar contrato.
 |---|---|
 | `01_estrutura.sql` | Tabelas (empresas, usinas, sedes, vistorias, fotos, acessos, histórico), cálculo de distância e alertas, e as telas de status |
 | `02_acessos.sql` | Regras de quem vê o quê, e a pasta privada de fotos (até 1 MB por foto) |
-| `../scripts/gerar_sql_supabase.py` | Gera `dados_locais/supabase_dados_iniciais.sql` com a empresa e a usina de demonstração e as sedes atuais |
+| `../scripts/gerar_sql_supabase.py` | Gera `dados_locais/supabase_dados_iniciais.sql` com a Usina A, a Unidade Araçatuba e as sedes atuais |
+| `03_exemplo_usinas.sql` | Exemplo fictício para demonstração: Usina A (unidades Araçatuba e Birigui) e Usina B (Unidade Penápolis), com cerca de dois meses de vistorias. Rode depois dos dados iniciais. |
 
 Os três arquivos podem ser rodados de novo sem perder nem duplicar dados.
 
@@ -42,7 +43,9 @@ where id = (select id from auth.users where email = 'SEU_EMAIL_AQUI');
 
 ## 4. Conferir
 
-Em **Table Editor**, a tabela `sedes` deve ter 24 linhas e `usinas` deve ter a "Usina Demonstração - Araçatuba".
+Em **Table Editor**, a tabela `sedes` deve ter 24 linhas e `usinas` deve ter a "Unidade Araçatuba". Com o exemplo (`03_exemplo_usinas.sql`) rodado, são 46 sedes em 3 unidades.
+
+No banco, "empresa" é a usina (o cliente) e "usina" é cada unidade dela.
 
 ## Chaves do projeto
 

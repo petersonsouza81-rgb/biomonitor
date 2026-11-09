@@ -1,5 +1,5 @@
 // A versao abaixo e atualizada automaticamente por scripts/atualizar_base_web.py
-const CACHE_NAME = 'biomonitor-sedes-20261109-config';
+const CACHE_NAME = 'biomonitor-sedes-20261109-aviso';
 
 // Arquivos do proprio app
 const ASSETS_LOCAIS = [

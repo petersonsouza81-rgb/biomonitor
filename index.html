@@ -1072,7 +1072,12 @@
       position: fixed;
       top: 60px;
       left: 50%;
-      transform: translateX(-50%) translateY(-100px);
+      /* Escondido de verdade (nao so deslocado): aviso de duas linhas nao aparece por cima do topo */
+      transform: translateX(-50%) translateY(-12px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      max-width: calc(100vw - 24px);
       background: #0f172a;
       color: white;
       padding: 12px 20px;
@@ -1081,7 +1086,7 @@
       font-weight: 600;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       z-index: 2500;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -1090,6 +1095,9 @@
 
     #toast.show {
       transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     #toast.error {
@@ -2396,7 +2404,18 @@
       if (typeof DADOS_SEDES !== "undefined" && DADOS_SEDES.features) {
         sedesData = DADOS_SEDES.features;
         renderizarSedes();
+        enquadrarSedes();
       }
+    }
+
+    // Ao abrir, o mapa mostra todas as sedes da unidade escolhida (uma vez só,
+    // para não tirar o usuário do lugar quando chegam dados novos)
+    let mapaEnquadrado = false;
+    function enquadrarSedes() {
+      if (mapaEnquadrado || !map || !sedesData.length) return;
+      const pontos = sedesData.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]]);
+      map.fitBounds(L.latLngBounds(pontos), { padding: [40, 40], maxZoom: 14 });
+      mapaEnquadrado = true;
     }
 
     function toggleLegenda() {
