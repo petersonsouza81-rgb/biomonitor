@@ -90,14 +90,9 @@
     }
 
     .brand-title h1 {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 800;
       letter-spacing: 0.3px;
-    }
-
-    .brand-title p {
-      font-size: 11px;
-      color: #d8f3dc;
     }
 
     .top-actions {
@@ -168,36 +163,113 @@
       background: rgba(255, 255, 255, 0.25);
     }
 
-    .btn-refresh-app {
-      background: rgba(255, 255, 255, 0.18);
-      border: 1.5px solid rgba(255, 255, 255, 0.45);
-      color: #ffffff;
-      padding: 7px 14px;
-      border-radius: 8px;
+    .btn-text-short {
+      display: none;
+    }
+
+    /* Botão só com ícone (configurações) */
+    .btn-icone {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      justify-content: center;
+      font-size: 15px;
+    }
+    .btn-icone[aria-expanded="true"] {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Menu de configurações */
+    #painel-config {
+      position: fixed;
+      top: 60px;
+      right: 10px;
+      z-index: 99990;
+      width: min(290px, calc(100vw - 20px));
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      display: none;
+    }
+    #painel-config.aberto {
+      display: block;
+    }
+    #painel-config .config-titulo {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #painel-config .config-secao {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #94a3b8;
+      margin: 12px 0 6px;
+    }
+    #painel-config .config-mapas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    #painel-config .config-mapas button {
+      background: #0f172a;
+      color: #cbd5e1;
+      border: 1.5px solid #334155;
+      border-radius: 9px;
+      padding: 9px 6px;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 7px;
-      transition: all 0.2s ease;
-      white-space: nowrap;
+      justify-content: center;
+      gap: 6px;
     }
-
-    .btn-refresh-app:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: #ffffff;
+    #painel-config .config-mapas button.ativo {
+      border-color: #22c55e;
+      color: #fff;
+      background: rgba(34, 197, 94, 0.15);
     }
-
-    .btn-refresh-app:active {
-      transform: scale(0.95);
+    #painel-config .config-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      color: #f8fafc;
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+      text-align: left;
+      padding: 10px 8px;
+      cursor: pointer;
+      font-family: inherit;
     }
-
-    .btn-text-short {
-      display: none;
+    #painel-config .config-item:hover,
+    #painel-config .config-item:active {
+      background: #334155;
     }
-
-    .brand-title-short {
+    #painel-config .config-item i {
+      width: 18px;
+      text-align: center;
+    }
+    #painel-config .config-rodape {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #334155;
+    }
+    #painel-config .config-rodape:empty {
       display: none;
     }
 
@@ -242,17 +314,11 @@
         border-radius: 7px;
         flex-shrink: 0;
       }
-      .brand-title-full {
-        display: none;
+      .brand-title h1 {
+        font-size: 15px;
       }
-      .brand-title-short {
-        display: inline;
-        font-size: 13px;
-        font-weight: 800;
-        letter-spacing: 0.2px;
-      }
-      .brand-title p {
-        display: none;
+      #painel-config {
+        top: 48px;
       }
       .top-actions {
         gap: 4px;
@@ -268,13 +334,17 @@
       .badge-stats .stat-item {
         gap: 2px;
       }
-      .btn-top,
-      .btn-install-app,
-      .btn-refresh-app {
+      .btn-top {
         padding: 5px 7px;
         font-size: 11px;
         gap: 4px;
         white-space: nowrap;
+      }
+      .btn-icone {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        font-size: 14px;
       }
       .btn-text-full { display: none; }
       .btn-text-short { display: inline; }
@@ -303,8 +373,8 @@
         width: 26px;
         height: 26px;
       }
-      .brand-title-short {
-        font-size: 12px;
+      .brand-title h1 {
+        font-size: 14px;
       }
       .badge-stats {
         padding: 2px 4px;
@@ -317,21 +387,15 @@
         width: 6.5px;
         height: 6.5px;
       }
-      .btn-top,
-      .btn-install-app,
-      .btn-refresh-app {
+      .btn-top {
         padding: 4px 6px;
         font-size: 10px;
         gap: 3px;
       }
-    }
-
-    @media (max-width: 375px) {
-      .btn-refresh-app .btn-text-short {
-        display: none;
-      }
-      .btn-refresh-app {
-        padding: 5px 7px;
+      .btn-icone {
+        width: 28px;
+        height: 28px;
+        padding: 0;
       }
     }
 
@@ -1507,32 +1571,6 @@
     }
 
 
-    /* Botão Baixar / Instalar App */
-    .btn-install-app {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #ffffff;
-      border: 1.5px solid #fbbf24;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.45);
-      transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-    .btn-install-app:hover {
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.6);
-    }
-    .btn-install-app:active {
-      transform: scale(0.95);
-    }
-
     /* TELA DE CARREGAMENTO INICIAL */
     #app-loading-screen {
       position: fixed;
@@ -1645,9 +1683,7 @@
           <img src="logos/BioMonitor_512.jpg" alt="BioMonitor Logo" onerror="this.onerror=null; this.src='logos/icon-192.png';">
         </div>
         <div class="brand-title">
-          <h1><span class="brand-title-full">BioMonitor | Monitoramento de Sedes</span><span class="brand-title-short">BioMonitor</span></h1>
-          <p>Gestão e Rotina de Vistorias no Campo</p>
-          <p id="dados-atualizacao" style="font-size:10px; opacity:.75; margin-top:2px;"></p>
+          <h1>BioMonitor</h1>
         </div>
       </div>
       <div class="top-actions">
@@ -1662,20 +1698,29 @@
           <i class="fa-solid fa-cloud-arrow-up"></i> <span id="fila-envio-qtd">0</span><span class="btn-text-full">&nbsp;pendente(s)</span>
         </button>
 
-        <!-- Botão Abrir Guia da Equipe de Campo -->
-        <a href="guia_campo.html?v=biomonitor_v23" class="btn-top" title="Abrir Guia da Equipe de Campo" style="background:#1e293b; color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px; border:1px solid #334155;">
-          <i class="fa-solid fa-person-digging" style="color:#38bdf8;"></i> <span class="btn-text-full">Guia do Campo</span><span class="btn-text-short">Guia</span>
-        </a>
-
-        <button id="btn-install-app" class="btn-install-app" onclick="acionarInstalacaoApp()" title="Instalar e baixar aplicativo no celular ou computador">
-          <i class="fa-solid fa-download"></i> <span class="btn-text-full">Baixar App</span><span class="btn-text-short">Baixar</span>
-        </button>
-
-        <button class="btn-top btn-refresh-app" id="btn-refresh-app" onclick="forcarAtualizacaoApp()" title="Atualizar aplicativo e limpar todo o cache">
-          <i class="fa-solid fa-arrows-rotate" id="icon-refresh-app"></i> <span class="btn-text-full">Limpar Cache e Atualizar</span><span class="btn-text-short">Atualizar</span>
+        <button id="btn-config" class="btn-top btn-icone" onclick="alternarConfiguracoes(event)" title="Configurações" aria-label="Configurações" aria-expanded="false">
+          <i class="fa-solid fa-gear"></i>
         </button>
       </div>
     </header>
+
+    <!-- Configurações: guia, instalar, limpar cache e mapa de fundo -->
+    <div id="painel-config" role="menu" onclick="event.stopPropagation()">
+      <div class="config-titulo"><i class="fa-solid fa-gear"></i> Configurações</div>
+
+      <div class="config-secao">Mapa de fundo</div>
+      <div class="config-mapas">
+        <button type="button" data-mapa="satelite" onclick="escolherMapaBase('satelite')"><i class="fa-solid fa-satellite"></i> Google Satélite</button>
+        <button type="button" data-mapa="ruas" onclick="escolherMapaBase('ruas')"><i class="fa-solid fa-map"></i> Mapa de ruas</button>
+      </div>
+
+      <div class="config-secao">Aplicativo</div>
+      <a class="config-item" href="guia_campo.html?v=biomonitor_v23"><i class="fa-solid fa-person-digging" style="color:#38bdf8;"></i> Guia do Campo</a>
+      <button type="button" id="btn-install-app" class="config-item" onclick="acionarInstalacaoApp()" style="display:none;"><i class="fa-solid fa-download" style="color:#fbbf24;"></i> Baixar App</button>
+      <button type="button" id="btn-refresh-app" class="config-item" onclick="forcarAtualizacaoApp()"><i class="fa-solid fa-arrows-rotate" id="icon-refresh-app" style="color:#4ade80;"></i> Limpar cache e atualizar</button>
+
+      <p id="dados-atualizacao" class="config-rodape"></p>
+    </div>
 
     
 
@@ -1905,18 +1950,18 @@
 
         <!-- 7. Possíveis Causadores: Torta, Vinhaça, Outro -->
         <div class="form-group">
-          <label>Possíveis Causadores</label>
+          <label>Possíveis Causadores <span style="font-weight:400; opacity:.7;">(opcional · toque de novo para desmarcar)</span></label>
           <div class="button-group-select">
             <label style="flex:1">
-              <input type="radio" name="campo-causador" value="Torta" onchange="alternarCampoCausadorOutro()">
+              <input type="radio" name="campo-causador" value="Torta" onclick="alternarSelecaoCausador(this)">
               <div class="btn-select-opt"><i class="fa-solid fa-leaf"></i> Torta</div>
             </label>
             <label style="flex:1">
-              <input type="radio" name="campo-causador" value="Vinhaça" onchange="alternarCampoCausadorOutro()">
+              <input type="radio" name="campo-causador" value="Vinhaça" onclick="alternarSelecaoCausador(this)">
               <div class="btn-select-opt"><i class="fa-solid fa-droplet"></i> Vinhaça</div>
             </label>
             <label style="flex:1">
-              <input type="radio" name="campo-causador" value="Outro" onchange="alternarCampoCausadorOutro()">
+              <input type="radio" name="campo-causador" value="Outro" onclick="alternarSelecaoCausador(this)">
               <div class="btn-select-opt"><i class="fa-solid fa-pen-to-square"></i> Outro</div>
             </label>
           </div>
@@ -2023,7 +2068,7 @@
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
       const btnInstall = document.getElementById("btn-install-app");
       if (btnInstall && !isStandalone) {
-        btnInstall.style.display = "inline-flex";
+        btnInstall.style.display = "flex";
       }
 
       if ('serviceWorker' in navigator) {
@@ -2265,24 +2310,17 @@
       map.on("zoom", atualizarTamanhoPontosPorZoom);
       map.on("zoomend", atualizarTamanhoPontosPorZoom);
 
-      // Camadas Base
-      const googleHybrid = L.tileLayer("https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
+      // Camadas Base (a escolha fica no menu de configurações)
+      mapasBase.satelite = L.tileLayer("https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
         maxZoom: 20,
         subdomains: ["mt0", "mt1", "mt2", "mt3"]
       });
-
-      const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      mapasBase.ruas = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19
       });
-
-      googleHybrid.addTo(map);
-
-      const baseMaps = {
-        "Google Satélite (Híbrido)": googleHybrid,
-        "OpenStreetMap": osm
-      };
-
-      L.control.layers(baseMaps, null, { position: "topright" }).addTo(map);
+      let mapaSalvo = "satelite";
+      try { mapaSalvo = localStorage.getItem(MAPA_BASE_KEY) || "satelite"; } catch (e) {}
+      escolherMapaBase(mapasBase[mapaSalvo] ? mapaSalvo : "satelite");
 
       markersLayer.addTo(map);
 
@@ -2305,6 +2343,34 @@
         }
       }, { passive: true });
     }
+
+    const MAPA_BASE_KEY = "biomonitor_mapa_base";
+    const mapasBase = {};
+    let mapaBaseAtual = null;
+
+    function escolherMapaBase(chave) {
+      if (!map || !mapasBase[chave]) return;
+      if (mapaBaseAtual) map.removeLayer(mapaBaseAtual);
+      mapaBaseAtual = mapasBase[chave].addTo(map);
+      mapaBaseAtual.bringToBack();
+      try { localStorage.setItem(MAPA_BASE_KEY, chave); } catch (e) {}
+      document.querySelectorAll("#painel-config [data-mapa]").forEach(b => b.classList.toggle("ativo", b.dataset.mapa === chave));
+    }
+
+    function alternarConfiguracoes(ev) {
+      if (ev) ev.stopPropagation();
+      const painel = document.getElementById("painel-config");
+      const aberto = painel.classList.toggle("aberto");
+      const conta = document.getElementById("bm-usuario-painel");
+      if (aberto && conta) conta.classList.remove("aberto");
+      document.getElementById("btn-config").setAttribute("aria-expanded", aberto ? "true" : "false");
+    }
+
+    // Toque fora do menu fecha
+    document.addEventListener("click", () => {
+      const painel = document.getElementById("painel-config");
+      if (painel && painel.classList.contains("aberto")) alternarConfiguracoes();
+    });
 
     function atualizarTamanhoPontosPorZoom() {
       if (!map) return;
@@ -2598,6 +2664,7 @@
       document.querySelectorAll('input[name="campo-larva-pupa"]').forEach(r => r.checked = false);
       document.querySelectorAll('input[name="campo-inseticida"]').forEach(r => r.checked = false);
       document.querySelectorAll('input[name="campo-causador"]').forEach(r => r.checked = false);
+      causadorMarcado = "";
       document.getElementById("box-causador-outro").style.display = "none";
       document.getElementById("form-causador-outro").value = "";
       document.getElementById("form-bandeiras").value = "";
@@ -2613,6 +2680,19 @@
         const mat = document.getElementById("form-matricula");
         if (!mat.value) mat.focus();
       }, 300);
+    }
+
+    // Causador e opcional: tocar de novo na opcao marcada desmarca
+    let causadorMarcado = "";
+    function alternarSelecaoCausador(radio) {
+      if (causadorMarcado === radio.value) {
+        radio.checked = false;
+        causadorMarcado = "";
+      } else {
+        causadorMarcado = radio.value;
+      }
+      alternarCampoCausadorOutro();
+      atualizarCamposFoto();
     }
 
     function alternarCampoCausadorOutro() {
@@ -2948,7 +3028,7 @@
       e.preventDefault();
       deferredPrompt = e;
       const btn = document.getElementById("btn-install-app");
-      if (btn) btn.style.display = "inline-flex";
+      if (btn) btn.style.display = "flex";
     });
 
     window.addEventListener('appinstalled', () => {

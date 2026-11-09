@@ -470,6 +470,9 @@
   function abrirPainel() {
     let p = document.getElementById("bm-usuario-painel");
     if (p && p.classList.contains("aberto")) { p.classList.remove("aberto"); return; }
+    // Fecha o menu de configurações do mapa, se estiver aberto
+    const config = document.getElementById("painel-config");
+    if (config && config.classList.contains("aberto") && typeof window.alternarConfiguracoes === "function") window.alternarConfiguracoes();
     if (!p) {
       p = elemento("div", { id: "bm-usuario-painel" });
       p.onclick = ev => ev.stopPropagation();
