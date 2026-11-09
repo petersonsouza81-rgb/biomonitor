@@ -945,6 +945,7 @@
     <!-- CABEÇALHO EXCLUSIVO PARA IMPRESSÃO EM PDF -->
     <div class="print-header">
       <h2 style="font-size:20px; font-weight:800;">BioMonitor - Relatório Executivo de Monitoramento de Sedes</h2>
+      <p style="font-size:14px; color:#0f172a; font-weight:700;" id="print-unidade"></p>
       <p style="font-size:12px; color:#555;">Gestão e Rotinas de Controle de Moscas-dos-Estábulos</p>
       <p style="font-size:11px; color:#777; margin-top:4px;" id="print-date"></p>
     </div>
@@ -1156,7 +1157,7 @@
       </div>
       <div class="table-footer">
         <span id="footer-historico-info">Exibindo 0 vistorias</span>
-        <span>Histórico Oficial KoboToolbox</span>
+        <span>Histórico oficial BioMonitor</span>
       </div>
     </div>
 
@@ -1345,7 +1346,10 @@
       // Topo data e hora
       const dNow = new Date();
       const txtData = `Última atualização: ${dNow.toLocaleDateString("pt-BR")} às ${dNow.toLocaleTimeString("pt-BR")}`;
-      document.getElementById("data-atualizacao-topo").innerText = txtData;
+      const unidade = window.DADOS_UNIDADE ? DADOS_UNIDADE.texto : "";
+      document.getElementById("data-atualizacao-topo").innerText = unidade ? `${unidade} • ${txtData}` : txtData;
+      const pUnidade = document.getElementById("print-unidade");
+      if (pUnidade) pUnidade.innerText = unidade;
       const pDate = document.getElementById("print-date");
       if (pDate) pDate.innerText = `Relatório gerado em: ${dNow.toLocaleDateString("pt-BR")} às ${dNow.toLocaleTimeString("pt-BR")}`;
     }
@@ -1761,8 +1765,12 @@
         return;
       }
 
+      const un = window.DADOS_UNIDADE || { usina: "", unidade: "" };
+
       // 1. Dados da Planilha: Status Atual das Sedes
       const dadosAbaSedes = listaSedesGeral.map(s => ({
+        "Usina": un.usina,
+        "Unidade": un.unidade,
         "Nº Sede": s.num_sede,
         "Nome da Sede": s.nome_sede,
         "FA": s.fa,
@@ -1783,6 +1791,8 @@
 
       // 2. Dados da Planilha: Histórico Completo de Vistorias
       const dadosAbaHistorico = listaHistoricoGeral.map(v => ({
+        "Usina": un.usina,
+        "Unidade": un.unidade,
         "Nº Sede": v.num_sede,
         "Fazenda": v.fazenda || v.nome_sede,
         "Proprietário": v.proprietario,
@@ -1801,7 +1811,7 @@
         "Distância Sede (m)": v.distancia_sede_metros,
         "Alertas de Validação": (v.alertas || []).join("; "),
         "Link Google Maps Ponto GPS": (v.lat && v.lon) ? `https://www.google.com/maps?q=${v.lat},${v.lon}` : "",
-        "Data Submissão Kobo": v.submetido_em || ""
+        "Enviado em": v.submetido_em ? new Date(v.submetido_em).toLocaleString("pt-BR") : ""
       }));
 
       const wb = XLSX.utils.book_new();
@@ -1812,7 +1822,9 @@
       XLSX.utils.book_append_sheet(wb, wsHist, "Historico_Vistorias");
 
       const dNow = new Date();
-      const filename = `BioMonitor_Relatorio_Vistorias_${dNow.getFullYear()}-${String(dNow.getMonth()+1).padStart(2,'0')}-${String(dNow.getDate()).padStart(2,'0')}.xlsx`;
+      const slugUnidade = [un.usina, un.unidade].filter(Boolean).join("_")
+        .normalize("NFD").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_");
+      const filename = `BioMonitor_${slugUnidade ? slugUnidade + "_" : ""}Vistorias_${dNow.getFullYear()}-${String(dNow.getMonth()+1).padStart(2,'0')}-${String(dNow.getDate()).padStart(2,'0')}.xlsx`;
       XLSX.writeFile(wb, filename);
     }
 

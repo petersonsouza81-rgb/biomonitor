@@ -8,7 +8,9 @@
 // Precisa ser carregado depois do supabase-js e do supabase_config.js.
 // =========================================================================
 (function () {
-  const CACHE_KEY = "biomonitor_cache_v1";
+  // v2: a unidade passou a trazer o nome da usina (cliente)
+  const CACHE_KEY = "biomonitor_cache_v2";
+  try { localStorage.removeItem("biomonitor_cache_v1"); } catch (e) {}
   const USINA_KEY = "biomonitor_usina";
   const FILA_KEY = "biomonitor_fila_envio";
   const VALIDADE_FOTO_S = 7 * 24 * 3600;
@@ -41,6 +43,12 @@
     window.DADOS_PONTOS = window.DADOS_SEDES;
     window.DADOS_VISTORIAS_KOBO = d ? d.vistorias : [];
     window.DADOS_ATUALIZADO_EM = c ? c.baixadoEm : undefined;
+    // Usina (cliente) e unidade abertas, para títulos de relatórios e arquivos
+    const u = d && d.usina;
+    window.DADOS_UNIDADE = u ? {
+      usina: u.empresa || "", unidade: u.nome || "", municipio: u.municipio || "", uf: u.uf || "",
+      texto: [u.empresa, u.nome].filter(Boolean).join(" · ")
+    } : null;
   }
 
   window.visitaNoPeriodo = function (v) {
@@ -169,7 +177,8 @@
           distancia_max_metros: usina.distancia_max_metros,
           inicio_monitoramento: usina.inicio_monitoramento || ""
         },
-        usina: { id: usina.id, nome: usina.nome, municipio: usina.municipio, uf: usina.uf },
+        usina: { id: usina.id, nome: usina.nome, municipio: usina.municipio, uf: usina.uf,
+          empresa: usina.empresas ? usina.empresas.nome : "" },
         sedes: { type: "FeatureCollection", features: sedes.map(sedeParaFeature) },
         vistorias: vistorias.map(v => vistoriaParaPagina(v, fotosPorVistoria[v.id]))
       }

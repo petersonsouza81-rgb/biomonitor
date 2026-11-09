@@ -906,6 +906,7 @@
           <img class="logo-marca" src="logos/BioMonitor_512.jpg" alt="BioMonitor" onerror="this.style.visibility='hidden'">
           <div class="doc-title">
             <h1>Relatório de Monitoramento de Sede</h1>
+            ${window.DADOS_UNIDADE ? `<p><strong>${esc(DADOS_UNIDADE.texto)}</strong></p>` : ""}
             <p>Levantamento e tratativas de mosca-dos-estábulos • ${esc(periodoTexto)}</p>
           </div>
           <img src="logos/BioMonitor_512.jpg" alt="BioMonitor" onerror="this.src='logos/icon-192.png'">
@@ -914,6 +915,8 @@
         <div class="section">
           <div class="section-title"><i class="fa-solid fa-house-chimney"></i> Identificação</div>
           <div class="ident-grid">
+            ${window.DADOS_UNIDADE ? `<div><span>Usina</span><strong>${esc(DADOS_UNIDADE.usina || "-")}</strong></div>
+            <div><span>Unidade</span><strong>${esc(DADOS_UNIDADE.unidade || "-")}</strong></div>` : ""}
             <div><span>Sede</span><strong>${esc(nomeSede)}</strong></div>
             <div><span>Fazenda</span><strong>${esc(fazenda)}</strong></div>
             <div><span>Proprietário(a)</span><strong>${esc(p.proprietario || "-")}</strong></div>
@@ -1115,11 +1118,14 @@
       const fazenda = feat ? (feat.properties.fazenda || "").normalize("NFD").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") : "";
       const de = document.getElementById("filtro-de").value;
       const ate = document.getElementById("filtro-ate").value;
+      const un = window.DADOS_UNIDADE;
+      const unidade = un ? [un.usina, un.unidade].filter(Boolean).join("_")
+        .normalize("NFD").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") + "_" : "";
       const tituloOriginal = document.title;
       // O navegador usa o título como nome sugerido do PDF
       document.title = modoTodas || selecao.size > 1
-        ? `Relatorios_Sedes_${de || "inicio"}_a_${ate || hoje}`
-        : `Relatorio_Sede_${valor}_${fazenda}_${hoje}`;
+        ? `Relatorios_Sedes_${unidade}${de || "inicio"}_a_${ate || hoje}`
+        : `Relatorio_Sede_${unidade}${valor}_${fazenda}_${hoje}`;
       window.print();
       setTimeout(() => { document.title = tituloOriginal; }, 1000);
     }
